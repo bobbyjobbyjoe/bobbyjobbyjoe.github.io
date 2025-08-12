@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rottle</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #383838;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 15px;
+            background-color: #dbdee0;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 3px solid #3498db;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .circle:hover {
+            border-color: #2980b9;
+        }
+       .line {
+            position: absolute;
+            background-color: #2c3e50;
+            z-index: 2;
+        }
+        .line-top {
+            height: 12px;
+            width: 3px;
+            left: 49%;
+            top: 10px;
+            transform: translateX(-50%);
+        }
+        .line-bottom {
+            height: 12px;
+            width: 3px;
+            left: 49%;
+            bottom: 10px;
+            transform: translateX(-50%);
+        }
+        .line-left {
+            width: 12px;
+            height: 3px;
+            left: 10px;
+            top: 49%;
+            transform: translateY(-50%);
+        }
+        .line-right {
+            width: 12px;
+            height: 3px;
+            right: 10px;
+            top: 49%;
+            transform: translateY(-50%);
+        }
+        #words{
+            margin:10px;
+            padding:2px;
+            font-size:20px;
+        }
+        #centered{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            padding:5px;
+            cursor:pointer;
+            transform:translate(-75%,-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="grid-container"></div>
+    <div id="words"></div>
+    <div id="centered" style="display:none;">You won! Click here to play again</div>
+    <script>
+        const gridContainer=document.getElementById('grid-container');
+        const words=document.getElementById("words");
+        const centered=document.getElementById("centered");
+        const numCircles=9;
+        var data_big=[];
+        var data_big_now=[];
+        var dir;
+        function createCircle(idi){
+            let circle = document.createElement('div');
+            circle.classList.add('circle');
+            circle.style.transition='transform 0.2s ease';
+            let data_lines=data_big[idi];
+            if(data_lines[0]==1){
+                let lineTop = document.createElement("div");
+                lineTop.classList.add("line");
+                lineTop.classList.add("line-top");
+                circle.appendChild(lineTop);
+            }
+            if(data_lines[2]==1){
+                let lineBottom = document.createElement("div");
+                lineBottom.classList.add("line");
+                lineBottom.classList.add("line-bottom");
+                circle.appendChild(lineBottom);
+            }
+            if(data_lines[3]==1){
+                let lineLeft = document.createElement("div");
+                lineLeft.classList.add("line");
+                lineLeft.classList.add("line-left");
+                circle.appendChild(lineLeft);
+            }
+            if(data_lines[1]==1){
+                let lineRight = document.createElement("div");
+                lineRight.classList.add("line");
+                lineRight.classList.add("line-right");
+                circle.appendChild(lineRight);
+            }
+            let a=Math.random();
+            if(a>0.75){
+                circle.style.transform=`rotate(90deg)`;
+                circle.dataset.rotation=90;
+                data_big_now.push([data_lines[3],data_lines[0],data_lines[1],data_lines[2]]);
+            }else if(a>0.5){
+                circle.style.transform=`rotate(180deg)`;
+                circle.dataset.rotation=180;
+                data_big_now.push([data_lines[2],data_lines[3],data_lines[0],data_lines[1]]);
+            }else if(a>0.25){
+                circle.style.transform=`rotate(270deg)`;
+                circle.dataset.rotation=270;
+                data_big_now.push([data_lines[1],data_lines[2],data_lines[3],data_lines[0]]);
+            }else{
+                circle.style.transform=`rotate(0deg)`;
+                circle.dataset.rotation=0;
+                data_big_now.push([data_lines[0],data_lines[1],data_lines[2],data_lines[3]]);
+            }
+            circle.dataset.idi=idi;
+            circle.addEventListener('click',rotateLeft);
+            circle.addEventListener('contextmenu',rotateRight);
+            circle.addEventListener('transitionend',()=>{
+                if(circle.dataset.rotation==360){
+                    circle.style='';
+                    circle.dataset.rotation=0;
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            circle.style.transition = 'transform 0.2s ease';
+                        });
+                    });
+                }else if(circle.dataset.rotation==-360){
+                    circle.style='';
+                    circle.dataset.rotation=0;
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            circle.style.transition = 'transform 0.2s ease';
+                        });
+                    });
+                }
+            });
+            return circle;
+        }
+        function correct_knobs_now(){
+            let dira=[0,0,0,0];
+            for(let i=0;i<data_big_now.length;i++){
+                dira[0]+=data_big_now[i][0];
+                dira[1]+=data_big_now[i][1];
+                dira[2]+=data_big_now[i][2];
+                dira[3]+=data_big_now[i][3];
+            }
+            return dira;
+        }
+        function update(){
+            let dir2=correct_knobs_now();
+            words.innerHTML="";
+            let count=0;
+            if(dir2[0]==dir[0]){
+                words.innerHTML+=`<p style="color:#0ac8f7">${dir2[0]}/${dir[0]} up</p>`;
+                count++;
+            }else{
+                words.innerHTML+=`<p style="color:#e30f00">${dir2[0]}/${dir[0]} up</p>`;
+            }
+            if(dir2[1]==dir[1]){
+                words.innerHTML+=`<p style="color:#0ac8f7">${dir2[1]}/${dir[1]} right</p>`;
+                count++;
+            }else{
+                words.innerHTML+=`<p style="color:#e30f00">${dir2[1]}/${dir[1]} right</p>`;
+            }
+            if(dir2[2]==dir[2]){
+                words.innerHTML+=`<p style="color:#0ac8f7">${dir2[2]}/${dir[2]} down</p>`;
+                count++;
+            }else{
+                words.innerHTML+=`<p style="color:#e30f00">${dir2[2]}/${dir[2]} down</p>`;
+            }
+            if(dir2[3]==dir[3]){
+                words.innerHTML+=`<p style="color:#0ac8f7">${dir2[3]}/${dir[3]} left</p>`;
+                count++;
+            }else{
+                words.innerHTML+=`<p style="color:#e30f00">${dir2[3]}/${dir[3]} left</p>`;
+            }
+            if(count===4){
+                centered.style.display="block";
+            }
+        }
+        function rotateLeft(event) {
+            event.preventDefault();
+            let circle=event.currentTarget;
+            let rotation=parseInt(circle.dataset.rotation) || 0;
+            rotation-=90;
+            circle.dataset.rotation=rotation;
+            circle.style.transform=`rotate(${rotation}deg)`;
+            data_big_now[circle.dataset.idi]=[data_big_now[circle.dataset.idi][1],data_big_now[circle.dataset.idi][2],data_big_now[circle.dataset.idi][3],data_big_now[circle.dataset.idi][0]];
+            update();
+        }
+        function rotateRight(event) {
+            event.preventDefault();
+            let circle=event.currentTarget;
+            let rotation=parseInt(circle.dataset.rotation) || 0;
+            rotation+=90;
+            circle.dataset.rotation=rotation;
+            circle.style.transform=`rotate(${rotation}deg)`;
+            data_big_now[circle.dataset.idi]=[data_big_now[circle.dataset.idi][3],data_big_now[circle.dataset.idi][0],data_big_now[circle.dataset.idi][1],data_big_now[circle.dataset.idi][2]];
+            update();
+        }
+        function hasValidCombination() {
+            var originalSum=data_big.reduce((acc, arr) => {
+                arr.forEach((val, idx) => acc[idx] += val);
+                return acc;
+            }, [0, 0, 0, 0]);
+            var rotatedArrays = data_big.map(arr => {
+                const rotations = [];
+                for (let shift = 1; shift < 4; shift++) {
+                    rotations.push(arr.map((_, i) => 
+                        arr[(i - shift + 4) % 4]));
+                }
+                return rotations;
+            });
+            let dp = new Set();
+            dp.add(JSON.stringify([0,0,0,0]));
+            for (const arrayRotations of rotatedArrays) {
+                const newStates = new Set();
+                for (const state of dp) {
+                    const current = JSON.parse(state);
+                    for (const rotated of arrayRotations) {
+                        const newState = current.map((v, i) => v + rotated[i]);
+                        if (newState.every((v, i) => v <= originalSum[i])) {
+                            newStates.add(JSON.stringify(newState));
+                        }
+                    }
+                }
+                dp = newStates;
+                if (!dp.size) return false;
+            }
+            return dp.has(JSON.stringify(originalSum));
+        }
+        function random_data(){
+            while(true){
+               for(let i=0;i<9;i++){
+                    let a=[Math.round(Math.random()),Math.round(Math.random()),Math.round(Math.random()),Math.round(Math.random())]
+                    if(a.filter(element=>element===1).length==0){
+                        a[Math.round(Math.random())*3]=1;
+                    }
+                    data_big.push(a);
+                }
+                if(!hasValidCombination()){
+                    return;
+                }else{
+                    data_big=[];
+                }
+            }
+        }
+        document.addEventListener('contextmenu',event=>event.preventDefault());
+        centered.addEventListener('click',()=>{
+            centered.style.display="none";
+            data_big=[];
+            data_big_now=[];
+            gridContainer.innerHTML="";
+            random_data();
+            for(let i=0;i<numCircles;i++){
+                gridContainer.appendChild(createCircle(i));
+            }
+            dir=data_big.reduce((acc, arr) => {
+                arr.forEach((val, idx) => acc[idx] += val);
+                return acc;
+            }, [0, 0, 0, 0]);
+            update();
+        });
+        random_data();
+        for(let i=0;i<numCircles;i++){
+            gridContainer.appendChild(createCircle(i));
+        }
+        dir=data_big.reduce((acc, arr) => {
+            arr.forEach((val, idx) => acc[idx] += val);
+            return acc;
+        }, [0, 0, 0, 0]);
+        update();
+    </script>
+</body>
+</html>
