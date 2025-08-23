@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pyramid</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            touch-action: none; /* Disables browser handling of touch events like pan/zoom */
+        }
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: grab;
+        }
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* --- UI Panels --- */
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* UI doesn't block canvas clicks */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        .top-panel, .bottom-panel {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            margin: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        #message-area {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        #info-area {
+            font-size: 1em;
+            margin-top: 5px;
+        }
+        button {
+            pointer-events: all; /* Buttons are clickable */
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            margin-top: 10px;
+            transition: background-color 0.2s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- Start Modal --- */
+        #start-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #start-modal {
+            background-color: #2c2c2c;
+            padding: 30px 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+            max-width: 90%;
+            width: 500px;
+        }
+        #start-modal h2 {
+            margin-top: 0;
+            color: #fff;
+        }
+        #start-modal p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        #start-options button {
+            margin: 0 10px;
+            min-width: 100px;
+        }
+
+        /* --- Rules Styling --- */
+        #toggle-rules-button {
+            background-color: #6c757d;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        #toggle-rules-button:hover {
+            background-color: #5a6268;
+        }
+        #rules-container {
+            text-align: left;
+            margin-bottom: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: rgba(0,0,0,0.2);
+        }
+        #rules-container h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #ffc107;
+        }
+        #rules-container ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+            list-style-type: square;
+        }
+        #rules-container li {
+            margin-bottom: 12px;
+        }
+        #rules-container strong {
+            color: #00c4ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Game Start Modal -->
+    <div id="start-modal-overlay">
+        <div id="start-modal">
+            <h2>Pyramid</h2>
+            
+            <button id="toggle-rules-button">Show Rules</button>
+
+            <div id="rules-container" style="display: none;">
+                <h3>How to Play</h3>
+                <ul>
+                    <li><strong>Objective:</strong> Be the first to get 5 of your pieces in a row — horizontally, vertically, or diagonally.</li>
+                    <li><strong>Phase 1: Placement</strong>
+                        <br>Each player takes turns placing one of their 12 pieces. The first piece can go anywhere, but every piece after that must be placed next to an existing piece (including diagonals).
+                    </li>
+                    <li><strong>Phase 2: Movement</strong>
+                        <br>Once both players run out of pieces to place, you must move one of your pieces on the board to an empty adjacent square.
+                    </li>
+                    <li><strong>The Golden Rule:</strong> All pieces on the board must always form a single, connected group. You can't make a move that splits the pieces into two separate groups.</li>
+                </ul>
+            </div>
+
+            <p>Who should go first?</p>
+            <div id="start-options">
+                <button id="player-starts-button">Player</button>
+                <button id="ai-starts-button">AI</button>
+                <button id="random-starts-button">Random</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-container">
+        <div class="top-panel">
+            <div id="message-area">Welcome! Place your first block.</div>
+            <div id="info-area">Phase: Placement</div>
+        </div>
+        <div class="bottom-panel">
+            <button id="restart-button">Restart Game</button>
+        </div>
+    </div>
+
+<script>
+// --- CORE SETUP ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const messageArea = document.getElementById('message-area');
+const infoArea = document.getElementById('info-area');
+const restartButton = document.getElementById('restart-button');
+const startModalOverlay = document.getElementById('start-modal-overlay');
+
+// --- GAME CONSTANTS ---
+const PLAYER = 1;
+const AI = 2;
+const MAX_PIECES_PER_PLAYER = 12;
+const WINNING_LENGTH = 5;
+const TILE_SIZE = 50;
+
+// --- GAME STATE ---
+let board = new Map(); // Using Map for sparse grid: "x,y" -> player
+let gameState = 'SETUP'; // 'SETUP', 'PLACEMENT', 'MOVEMENT', 'GAME_OVER'
+let currentPlayer = PLAYER;
+let playerPieces = { [PLAYER]: 0, [AI]: 0 };
+let selectedPiece = null; // For movement phase: {x, y}
+let lastMove = { x: null, y: null }; // To highlight opponent's last move
+let winningLine = []; // To highlight the winning line
+
+// --- VIEW STATE (PAN & ZOOM) ---
+let view = {
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+};
+
+// --- INPUT STATE ---
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+let lastTouchDistance = null;
+let lastTouchCenter = null;
+
+
+// --- INITIALIZATION ---
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (gameState !== 'SETUP') {
+        draw();
+    }
+}
+
+function startGame(startingPlayerChoice) {
+    startModalOverlay.style.display = 'none';
+    let firstPlayer;
+    if (startingPlayerChoice === 'player') {
+        firstPlayer = PLAYER;
+    } else if (startingPlayerChoice === 'ai') {
+        firstPlayer = AI;
+    } else { // random
+        firstPlayer = Math.random() < 0.5 ? PLAYER : AI;
+    }
+    resetGame(firstPlayer);
+}
+
+
+function resetGame(firstPlayer = PLAYER) {
+    board.clear();
+    playerPieces[PLAYER] = 0;
+    playerPieces[AI] = 0;
+    
+    gameState = 'PLACEMENT';
+    currentPlayer = firstPlayer;
+    selectedPiece = null;
+    lastMove = { x: null, y: null };
+    winningLine = [];
+    
+    // Center the view on the first move
+    view.scale = 1;
+    view.offsetX = canvas.width / 2;
+    view.offsetY = canvas.height / 2;
+    
+    if (currentPlayer === AI) {
+        // AI places the first piece at (0,0) to start the game
+        const firstMove = {x: 0, y: 0};
+        board.set(`${firstMove.x},${firstMove.y}`, AI);
+        playerPieces[AI]++;
+        lastMove = firstMove;
+        currentPlayer = PLAYER; // Switch to player's turn
+    }
+    
+    updateUIMessage();
+    draw();
+}
+
+// --- DRAWING ---
+function draw() {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(view.offsetX, view.offsetY);
+    ctx.scale(view.scale, view.scale);
+
+    drawGrid();
+    drawPieces();
+    drawHighlights();
+    drawWinningLine();
+
+    ctx.restore();
+}
+
+function drawGrid() {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1 / view.scale;
+
+    const startX = Math.floor(-view.offsetX / (TILE_SIZE * view.scale)) * TILE_SIZE;
+    const startY = Math.floor(-view.offsetY / (TILE_SIZE * view.scale)) * TILE_SIZE;
+    const endX = startX + (canvas.width / view.scale);
+    const endY = startY + (canvas.height / view.scale);
+
+    ctx.beginPath();
+    for (let x = startX; x <= endX; x += TILE_SIZE) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+    }
+    for (let y = startY; y <= endY; y += TILE_SIZE) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+    }
+    ctx.stroke();
+}
+
+function drawPieces() {
+    board.forEach((player, key) => {
+        const [x, y] = key.split(',').map(Number);
+        const drawX = x * TILE_SIZE;
+        const drawY = y * TILE_SIZE;
+
+        ctx.fillStyle = player === PLAYER ? '#007bff' : '#dc3545';
+        ctx.fillRect(drawX + 2, drawY + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+    });
+}
+
+function drawHighlights() {
+    // Highlight selected piece for movement
+    if (gameState === 'MOVEMENT' && selectedPiece) {
+        ctx.strokeStyle = '#ffc107'; // Yellow
+        ctx.lineWidth = 4 / view.scale;
+        ctx.strokeRect(
+            selectedPiece.x * TILE_SIZE,
+            selectedPiece.y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+        );
+    }
+
+    // Highlight opponent's last move
+    if (lastMove.x !== null && gameState !== 'GAME_OVER') {
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)'; // Cyan
+        ctx.beginPath();
+        ctx.arc(
+            lastMove.x * TILE_SIZE + TILE_SIZE / 2,
+            lastMove.y * TILE_SIZE + TILE_SIZE / 2,
+            TILE_SIZE / 6,
+            0,
+            2 * Math.PI
+        );
+        ctx.fill();
+    }
+}
+
+function drawWinningLine() {
+    if (winningLine.length < WINNING_LENGTH) return;
+
+    ctx.strokeStyle = '#ffc107'; // Yellow
+    ctx.lineWidth = 10 / view.scale;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+
+    const firstPiece = winningLine[0];
+    const lastPiece = winningLine[winningLine.length-1];
+
+    ctx.moveTo(
+        firstPiece.x * TILE_SIZE + TILE_SIZE / 2,
+        firstPiece.y * TILE_SIZE + TILE_SIZE / 2
+    );
+    ctx.lineTo(
+        lastPiece.x * TILE_SIZE + TILE_SIZE / 2,
+        lastPiece.y * TILE_SIZE + TILE_SIZE / 2
+    );
+    ctx.stroke();
+}
+
+// --- COORDINATE & UTILITY FUNCTIONS ---
+function screenToGrid(x, y) {
+    const gridX = Math.floor((x - view.offsetX) / (TILE_SIZE * view.scale));
+    const gridY = Math.floor((y - view.offsetY) / (TILE_SIZE * view.scale));
+    return { x: gridX, y: gridY };
+}
+
+function getNeighbors(x, y) {
+    const neighbors = [];
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            neighbors.push({ x: x + dx, y: y + dy });
+        }
+    }
+    return neighbors;
+}
+
+// --- GAME LOGIC ---
+function isValidPlacement(x, y) {
+    if (board.has(`${x},${y}`)) return false; // Cell occupied
+    if (board.size === 0) return true; // First piece can go anywhere
+
+    // Must be adjacent to an existing piece
+    return getNeighbors(x, y).some(n => board.has(`${n.x},${n.y}`));
+}
+
+// CRITICAL: Checks if all pieces form a single contiguous group
+function isContiguous(tempBoard, startPieceKey) {
+    if (tempBoard.size <= 1) return true;
+    
+    const toVisit = [startPieceKey];
+    const visited = new Set([startPieceKey]);
+    let head = 0;
+
+    while (head < toVisit.length) {
+        const currentKey = toVisit[head++];
+        const [x, y] = currentKey.split(',').map(Number);
+
+        getNeighbors(x, y).forEach(neighbor => {
+            const neighborKey = `${neighbor.x},${neighbor.y}`;
+            if (tempBoard.has(neighborKey) && !visited.has(neighborKey)) {
+                visited.add(neighborKey);
+                toVisit.push(neighborKey);
+            }
+        });
+    }
+    return visited.size === tempBoard.size;
+}
+
+function isValidMove(fromX, fromY, toX, toY) {
+    // Basic checks
+    if (fromX === toX && fromY === toY) return false;
+    if (board.has(`${toX},${toY}`)) return false;
+    if (!isValidPlacement(toX, toY)) return false;
+
+    // The critical contiguity check
+    const tempBoard = new Map(board);
+    const piece = tempBoard.get(`${fromX},${fromY}`);
+    tempBoard.delete(`${fromX},${fromY}`);
+    tempBoard.set(`${toX},${toY}`, piece);
+
+    const firstPieceKey = tempBoard.keys().next().value;
+    return isContiguous(tempBoard, firstPieceKey);
+}
+
+function checkWin(player, placedX, placedY) {
+    const directions = [
+        { dx: 1, dy: 0 },  // Horizontal
+        { dx: 0, dy: 1 },  // Vertical
+        { dx: 1, dy: 1 },  // Diagonal \
+        { dx: 1, dy: -1 }  // Diagonal /
+    ];
+
+    for (const { dx, dy } of directions) {
+        const line = [{x: placedX, y: placedY}];
+        // Count in one direction
+        for (let i = 1; i < WINNING_LENGTH; i++) {
+            const currentX = placedX + i * dx;
+            const currentY = placedY + i * dy;
+            if (board.get(`${currentX},${currentY}`) === player) {
+                line.push({x: currentX, y: currentY});
+            } else {
+                break;
+            }
+        }
+        // Count in the opposite direction
+        for (let i = 1; i < WINNING_LENGTH; i++) {
+            const currentX = placedX - i * dx;
+            const currentY = placedY - i * dy;
+            if (board.get(`${currentX},${currentY}`) === player) {
+                line.push({x: currentX, y: currentY});
+            } else {
+                break;
+            }
+        }
+        if (line.length >= WINNING_LENGTH) {
+             // Sort the line for clean drawing
+            line.sort((a, b) => a.x - b.x || a.y - b.y);
+            return line;
+        }
+    }
+    return null;
+}
+
+
+function checkGameState(lastPlayer, x, y) {
+    const winResult = checkWin(lastPlayer, x, y);
+    if (winResult) {
+        gameState = 'GAME_OVER';
+        winningLine = winResult;
+        updateUIMessage(lastPlayer === PLAYER ? "You win by 5-in-a-row!" : "AI wins by 5-in-a-row!");
+        return true;
+    }
+
+    if (gameState === 'PLACEMENT' && playerPieces[PLAYER] >= MAX_PIECES_PER_PLAYER && playerPieces[AI] >= MAX_PIECES_PER_PLAYER) {
+        gameState = 'MOVEMENT';
+    }
+
+    const nextPlayer = lastPlayer === PLAYER ? AI : PLAYER;
+    if (getAllLegalMoves(nextPlayer).length === 0) {
+        gameState = 'GAME_OVER';
+        updateUIMessage(nextPlayer === PLAYER ? "You lose! No legal moves." : "AI loses! No legal moves.");
+        return true;
+    }
+    
+    return false;
+}
+
+function handlePlayerClick(x, y) {
+    if (gameState === 'GAME_OVER' || gameState === 'SETUP' || currentPlayer !== PLAYER) return;
+
+    if (gameState === 'PLACEMENT') {
+        if (isValidPlacement(x, y)) {
+            board.set(`${x},${y}`, PLAYER);
+            playerPieces[PLAYER]++;
+            lastMove = {x, y};
+            draw();
+
+            if (!checkGameState(PLAYER, x, y)) {
+                currentPlayer = AI;
+                updateUIMessage();
+                setTimeout(aiMove, 5); // Small delay for better UX
+            }
+        }
+    } else if (gameState === 'MOVEMENT') {
+        const key = `${x},${y}`;
+        if (board.get(key) === PLAYER) {
+            selectedPiece = { x, y };
+            draw();
+        } else if (selectedPiece) {
+            if (isValidMove(selectedPiece.x, selectedPiece.y, x, y)) {
+                board.delete(`${selectedPiece.x},${selectedPiece.y}`);
+                board.set(`${x},${y}`, PLAYER);
+                selectedPiece = null;
+                lastMove = {x, y};
+                draw();
+
+                if (!checkGameState(PLAYER, x, y)) {
+                    currentPlayer = AI;
+                    updateUIMessage();
+                    setTimeout(aiMove, 5); // Small delay
+                }
+            } else {
+                selectedPiece = null; // Invalid move, deselect
+                draw();
+            }
+        }
+    }
+}
+
+
+// --- AI LOGIC ---
+function aiMove() {
+    if (gameState === 'GAME_OVER' || currentPlayer !== AI) return;
+
+    updateUIMessage("AI is thinking...");
+
+    const bestMove = findBestMove();
+
+    if (!bestMove) {
+        gameState = 'GAME_OVER';
+        updateUIMessage("AI has no legal moves. You win!");
+        draw();
+        return;
+    }
+
+    let checkX, checkY;
+
+    if (gameState === 'PLACEMENT') {
+        board.set(`${bestMove.x},${bestMove.y}`, AI);
+        playerPieces[AI]++;
+        checkX = bestMove.x;
+        checkY = bestMove.y;
+        lastMove = {x: checkX, y: checkY};
+    } else { // MOVEMENT
+        board.delete(`${bestMove.from.x},${bestMove.from.y}`);
+        board.set(`${bestMove.to.x},${bestMove.to.y}`, AI);
+        checkX = bestMove.to.x;
+        checkY = bestMove.to.y;
+        lastMove = {x: checkX, y: checkY};
+    }
+    
+    draw();
+
+    if (!checkGameState(AI, checkX, checkY)) {
+        currentPlayer = PLAYER;
+        updateUIMessage();
+    }
+}
+
+function findBestMove() {
+    const legalMoves = getAllLegalMoves(AI);
+    if (legalMoves.length === 0) return null;
+
+    // 1. Look for an immediate AI win
+    for (const move of legalMoves) {
+        const tempBoard = makeMoveOnTempBoard(board, move, AI);
+        const target = move.to || move;
+        if (checkWinOnBoard(tempBoard, AI, target.x, target.y)) {
+            return move;
+        }
+    }
+
+    // 2. Look to block an immediate player win
+    const playerLegalMoves = getAllLegalMoves(PLAYER);
+    for (const playerMove of playerLegalMoves) {
+         const tempBoard = makeMoveOnTempBoard(board, playerMove, PLAYER);
+         const target = playerMove.to || playerMove;
+         if (checkWinOnBoard(tempBoard, PLAYER, target.x, target.y)) {
+            // Find a legal AI move that can occupy this winning spot
+            const blockingMove = legalMoves.find(aiMove => {
+                const aiTarget = aiMove.to || aiMove;
+                return aiTarget.x === target.x && aiTarget.y === target.y;
+            });
+            if(blockingMove) return blockingMove;
+         }
+    }
+
+    // 3. If no immediate win/loss, use heuristic
+    let bestMove = null;
+    let maxScore = -Infinity;
+    for (const move of legalMoves) {
+        const tempBoard = makeMoveOnTempBoard(board, move, AI);
+        const score = evaluateBoard(tempBoard, AI);
+        if (score > maxScore) {
+            maxScore = score;
+            bestMove = move;
+        }
+    }
+
+    return bestMove || legalMoves[Math.floor(Math.random() * legalMoves.length)]; // Fallback
+}
+
+function makeMoveOnTempBoard(originalBoard, move, player) {
+    const tempBoard = new Map(originalBoard);
+    if (move.from) { // Movement
+        tempBoard.delete(`${move.from.x},${move.from.y}`);
+        tempBoard.set(`${move.to.x},${move.to.y}`, player);
+    } else { // Placement
+        tempBoard.set(`${move.x},${move.y}`, player);
+    }
+    return tempBoard;
+}
+
+function getAllLegalMoves(player) {
+    const moves = [];
+    const emptyAdjacentCells = new Set();
+    
+    if (board.size === 0) { // Special case for first move of the game
+        moves.push({ x: 0, y: 0 });
+        return moves;
+    }
+
+    board.forEach((p, key) => {
+        const [x, y] = key.split(',').map(Number);
+        getNeighbors(x,y).forEach(n => {
+            if(!board.has(`${n.x},${n.y}`)){
+                emptyAdjacentCells.add(`${n.x},${n.y}`);
+            }
+        });
+    });
+
+    const isPlacementPhase = playerPieces[player] < MAX_PIECES_PER_PLAYER;
+
+    if (isPlacementPhase) {
+        emptyAdjacentCells.forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            moves.push({ x, y });
+        });
+    } else { // Movement Phase
+        const playerPiecesOnBoard = [];
+        board.forEach((p, key) => {
+            if (p === player) {
+                const [x,y] = key.split(',').map(Number);
+                playerPiecesOnBoard.push({x,y});
+            }
+        });
+        
+        for (const from of playerPiecesOnBoard) {
+             emptyAdjacentCells.forEach(key => {
+                const [x, y] = key.split(',').map(Number);
+                const to = {x,y};
+                // Make sure we're not checking a move to the same spot adjacent check might suggest
+                if(from.x === to.x && from.y === to.y) return;
+                
+                if (isValidMove(from.x, from.y, to.x, to.y)) {
+                    // Avoid duplicate move objects
+                    if (!moves.some(m => m.from.x === from.x && m.from.y === from.y && m.to.x === to.x && m.to.y === to.y)) {
+                        moves.push({ from, to });
+                    }
+                }
+            });
+        }
+    }
+    return moves;
+}
+
+function checkWinOnBoard(checkBoard, player, placedX, placedY) {
+    const directions = [{dx: 1, dy: 0},{dx: 0, dy: 1},{dx: 1, dy: 1},{dx: 1, dy: -1}];
+    for (const { dx, dy } of directions) {
+        let count = 1;
+        for (let i = 1; i < WINNING_LENGTH; i++) if (checkBoard.get(`${placedX + i * dx},${placedY + i * dy}`) === player) count++; else break;
+        for (let i = 1; i < WINNING_LENGTH; i++) if (checkBoard.get(`${placedX - i * dx},${placedY - i * dy}`) === player) count++; else break;
+        if (count >= WINNING_LENGTH) return true;
+    }
+    return false;
+}
+
+
+function evaluateBoard(evalBoard, player) {
+    let score = 0;
+    const opponent = player === PLAYER ? AI : PLAYER;
+
+    evalBoard.forEach((p, key) => {
+        const [x, y] = key.split(',').map(Number);
+        if(p === player) {
+             score += evaluatePosition(evalBoard, x, y, player, opponent);
+        } else {
+             score -= evaluatePosition(evalBoard, x, y, opponent, player);
+        }
+    });
+
+    return score;
+}
+
+function evaluatePosition(evalBoard, x, y, player, opponent) {
+    let positionScore = 0;
+    const directions = [{dx: 1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 1}, {dx: 1, dy: -1}];
+    
+    for (const {dx, dy} of directions) {
+        // Evaluate potential for 5-in-a-row starting from this piece
+        for (let i = 0; i < WINNING_LENGTH; i++) {
+            let friendlies = 0;
+            let enemies = 0;
+            let isOpen = true;
+
+            for (let j = 0; j < WINNING_LENGTH; j++) {
+                const currentX = x + (j - i) * dx;
+                const currentY = y + (j - i) * dy;
+                const piece = evalBoard.get(`${currentX},${currentY}`);
+
+                if (piece === player) friendlies++;
+                else if (piece === opponent) {
+                    enemies++;
+                    isOpen = false;
+                    break;
+                }
+            }
+
+            if (!isOpen) continue;
+
+            if (friendlies === 4) positionScore += 1000;
+            else if (friendlies === 3) positionScore += 100;
+            else if (friendlies === 2) positionScore += 10;
+            else if (friendlies === 1) positionScore += 1;
+        }
+    }
+    return positionScore;
+}
+
+
+// --- UI & INPUT HANDLERS ---
+function updateUIMessage(msg = '') {
+    if (msg) {
+        messageArea.textContent = msg;
+    } else {
+        if (gameState === 'GAME_OVER') return;
+        messageArea.textContent = currentPlayer === PLAYER ? "Your Turn" : "AI's Turn";
+    }
+
+    const phaseText = gameState.charAt(0) + gameState.slice(1).toLowerCase();
+    infoArea.textContent = `Phase: ${phaseText} | Your pieces: ${playerPieces[PLAYER]}/${MAX_PIECES_PER_PLAYER} | AI pieces: ${playerPieces[AI]}/${MAX_PIECES_PER_PLAYER}`;
+}
+
+function handleMouseDown(e) {
+    isDragging = true;
+    dragStart.x = e.clientX;
+    dragStart.y = e.clientY;
+}
+
+function handleMouseUp(e) {
+    if (isDragging) {
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) { // It's a click
+            const { x, y } = screenToGrid(e.clientX, e.clientY);
+            handlePlayerClick(x, y);
+        }
+    }
+    isDragging = false;
+}
+
+function handleMouseMove(e) {
+    if (!isDragging) return;
+    view.offsetX += e.movementX;
+    view.offsetY += e.movementY;
+    draw();
+}
+
+function handleWheel(e) {
+    e.preventDefault();
+    const scaleAmount = 1 - e.deltaY * 0.001;
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    view.offsetX = mouseX - (mouseX - view.offsetX) * scaleAmount;
+    view.offsetY = mouseY - (mouseY - view.offsetY) * scaleAmount;
+    view.scale *= scaleAmount;
+    view.scale = Math.max(0.2, Math.min(view.scale, 5));
+    draw();
+}
+
+function getTouchDistance(e) {
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    return Math.sqrt(Math.pow(t2.clientX - t1.clientX, 2) + Math.pow(t2.clientY - t1.clientY, 2));
+}
+
+function getTouchCenter(e) {
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2
+    };
+}
+
+function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+        isDragging = true;
+        dragStart.x = e.touches[0].clientX;
+        dragStart.y = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+        isDragging = false;
+        lastTouchDistance = getTouchDistance(e);
+        lastTouchCenter = getTouchCenter(e);
+    }
+}
+
+function handleTouchEnd(e) {
+    if (isDragging && e.touches.length === 0) {
+        const dx = e.changedTouches[0].clientX - dragStart.x;
+        const dy = e.changedTouches[0].clientY - dragStart.y;
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) { // Tap
+             const { x, y } = screenToGrid(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            handlePlayerClick(x, y);
+        }
+    }
+    isDragging = e.touches.length > 0;
+    lastTouchDistance = null;
+    lastTouchCenter = null;
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging) {
+        const touch = e.touches[0];
+        const dx = touch.clientX - dragStart.x;
+        const dy = touch.clientY - dragStart.y;
+        view.offsetX += dx;
+        view.offsetY += dy;
+        dragStart.x = touch.clientX;
+        dragStart.y = touch.clientY;
+        draw();
+    } else if (e.touches.length === 2) {
+        const newDist = getTouchDistance(e);
+        const newCenter = getTouchCenter(e);
+        const scaleAmount = newDist / lastTouchDistance;
+        view.offsetX = newCenter.x - (newCenter.x - view.offsetX) * scaleAmount;
+        view.offsetY = newCenter.y - (newCenter.y - view.offsetY) * scaleAmount;
+        view.scale *= scaleAmount;
+        view.scale = Math.max(0.2, Math.min(view.scale, 5));
+        lastTouchDistance = newDist;
+        lastTouchCenter = newCenter;
+        draw();
+    }
+}
+
+
+// --- EVENT LISTENERS ---
+window.addEventListener('resize', resizeCanvas);
+restartButton.addEventListener('click', () => {
+    startModalOverlay.style.display = 'flex'; // Show modal on restart
+    gameState = 'SETUP';
+});
+
+// Modal buttons
+document.getElementById('player-starts-button').addEventListener('click', () => startGame('player'));
+document.getElementById('ai-starts-button').addEventListener('click', () => startGame('ai'));
+document.getElementById('random-starts-button').addEventListener('click', () => startGame('random'));
+
+// Rules toggle button
+const toggleBtn = document.getElementById('toggle-rules-button');
+const rulesContainer = document.getElementById('rules-container');
+toggleBtn.addEventListener('click', () => {
+    if (rulesContainer.style.display === 'none') {
+        rulesContainer.style.display = 'block';
+        toggleBtn.textContent = 'Hide Rules';
+    } else {
+        rulesContainer.style.display = 'none';
+        toggleBtn.textContent = 'Show Rules';
+    }
+});
+
+// Mouse events
+canvas.addEventListener('mousedown', handleMouseDown);
+canvas.addEventListener('mouseup', handleMouseUp);
+canvas.addEventListener('mouseleave', () => { isDragging = false; });
+canvas.addEventListener('mousemove', handleMouseMove);
+canvas.addEventListener('wheel', handleWheel);
+
+// Touch events
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('touchend', handleTouchEnd);
+canvas.addEventListener('touchcancel', () => { isDragging = false; lastTouchDistance = null; });
+canvas.addEventListener('touchmove', handleTouchMove);
+
+
+// --- STARTUP ---
+resizeCanvas(); // Initial size setup
+
+</script>
+</body>
+</html>
