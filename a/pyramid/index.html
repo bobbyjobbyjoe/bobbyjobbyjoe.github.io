@@ -317,7 +317,6 @@ function isValidMove(fromX, fromY, toX, toY) {
     const tempBoard = new Map(board);
     const piece = tempBoard.get(`${fromX},${fromY}`);
     tempBoard.delete(`${fromX},${fromY}`);
-    tempBoard.set(`${toX},${toY}`, piece);
 
     const firstPieceKey = tempBoard.keys().next().value;
     return isContiguous(tempBoard, firstPieceKey);
