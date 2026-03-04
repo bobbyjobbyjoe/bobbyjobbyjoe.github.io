@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Englar — Natural Language Programming</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0b0906;
+  --bg2:      #120f0a;
+  --bg3:      #1c1812;
+  --amber:    #dba84a;
+  --amber-hi: #f0c060;
+  --amber-lo: #7a5e25;
+  --amber-px: #2e2210;
+  --teal:     #5bb89a;
+  --red:      #cc5c4a;
+  --border:   #241e14;
+  --font:     'Courier Prime', 'Courier New', monospace;
+  --serif:    'Playfair Display', Georgia, serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--amber);
+  font-family: var(--font);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.logo { display: flex; align-items: baseline; gap: 14px; }
+.logo-name {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--amber-hi);
+  letter-spacing: 3px;
+}
+.logo-sub {
+  font-size: 10px;
+  color: var(--amber-lo);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ── BUTTONS & CONTROLS ── */
+button, select {
+  background: transparent;
+  font-family: var(--font);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--amber-lo);
+  color: var(--amber-lo);
+  padding: 5px 14px;
+  transition: border-color .12s, color .12s, background .12s;
+}
+button:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-px); }
+button:disabled { opacity: .35; cursor: not-allowed; }
+.btn-run { border-color: var(--teal); color: var(--teal); }
+.btn-run:hover { background: rgba(91,184,154,.1); }
+select { padding: 5px 8px; appearance: none; -webkit-appearance: none; }
+select:focus { outline: none; border-color: var(--amber); }
+
+/* ── MAIN SPLIT ── */
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+}
+
+/* ── PANES ── */
+.pane { display: flex; flex-direction: column; overflow: hidden; }
+.pane + .pane { border-left: 1px solid var(--border); }
+.pane-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-lo);
+  flex-shrink: 0;
+}
+.status { display: flex; align-items: center; gap: 6px; }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--amber-lo);
+  transition: background .2s;
+}
+.dot.running { background: var(--teal); animation: blink 1s ease infinite; }
+.dot.error   { background: var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* ── EDITOR ── */
+.editor-wrap { position: relative; flex: 1; overflow: hidden; }
+.hl-layer,
+#editor {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  font-family: var(--font); font-size: 13.5px; line-height: 1.75;
+  padding: 18px; margin: 0; border: none; outline: none;
+  white-space: pre-wrap; word-wrap: break-word; tab-size: 4;
+  box-sizing: border-box; overflow: auto;
+}
+#editor {
+  color: transparent; caret-color: var(--amber-hi);
+  background: transparent; resize: none; z-index: 2;
+  scrollbar-width: thin; scrollbar-color: var(--amber-px) transparent;
+}
+#editor::selection { background: rgba(219,168,74,.22); }
+.hl-layer {
+  background: var(--bg); z-index: 1; pointer-events: none;
+  color: var(--amber); overflow: hidden;
+}
+/* token colours */
+.hl-layer .k  { color: #e8a84a; font-weight: 700; }   /* keywords   */
+.hl-layer .s  { color: #7fd4b8; }                      /* strings    */
+.hl-layer .n  { color: #a8d8a8; }                      /* numbers    */
+.hl-layer .o  { color: #c8a0e0; }                      /* operators  */
+.hl-layer .p  { color: var(--amber-lo); }              /* punctuation */
+.hl-layer .c  { color: var(--amber-lo); font-style: italic; } /* comments */
+
+/* ── OUTPUT ── */
+.out-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-px) transparent;
+}
+.out-scroll::-webkit-scrollbar { width: 3px; }
+.out-scroll::-webkit-scrollbar-thumb { background: var(--amber-px); }
+.out-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin-bottom: 1px;
+  word-break: break-all;
+}
+.out-glyph { color: var(--amber-lo); user-select: none; flex-shrink: 0; }
+.out-line.sys  .out-glyph,
+.out-line.sys  .out-text { color: var(--amber-lo); font-style: italic; }
+.out-line.err  .out-glyph,
+.out-line.err  .out-text { color: var(--red); }
+.out-line.inp  .out-glyph,
+.out-line.inp  .out-text { color: var(--teal); }
+.out-empty { color: var(--amber-px); font-style: italic; text-align: center; margin-top: 48px; font-size: 13px; }
+
+/* ── INPUT BAR ── */
+.in-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+.in-bar.show { display: flex; }
+.in-prompt { color: var(--teal); font-size: 13px; flex-shrink: 0; white-space: nowrap; }
+#in-field {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--teal);
+  color: var(--teal);
+  font-family: var(--font);
+  font-size: 13.5px;
+  flex: 1;
+  outline: none;
+  caret-color: var(--teal);
+  padding-bottom: 2px;
+}
+
+/* ── REFERENCE PANEL ── */
+.ref-wrap { border-top: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+.ref-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-lo);
+  user-select: none;
+  transition: color .12s;
+}
+.ref-toggle:hover { color: var(--amber); }
+.ref-toggle-arrow { transition: transform .18s; display: inline-block; }
+.ref-body {
+  display: none;
+  padding: 12px 20px 16px;
+  max-height: 210px;
+  overflow-y: auto;
+  columns: 4;
+  column-gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-px) transparent;
+}
+.ref-body.open { display: block; }
+.ref-sec { break-inside: avoid; margin-bottom: 14px; }
+.ref-sec h4 {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-lo);
+  margin-bottom: 5px;
+}
+.ref-sec code {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--amber);
+}
+.ref-sec code em { color: var(--teal); font-style: normal; }
+@media (max-width: 900px) { .ref-body { columns: 2; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-name">Englar</span>
+    <span class="logo-sub">Natural Language Programming</span>
+  </div>
+  <div class="header-right">
+    <select id="exSel" title="Load example" onchange="loadEx(this.value)">
+      <option value="">— Examples —</option>
+      <option value="hello">Hello World</option>
+      <option value="fizzbuzz">FizzBuzz</option>
+      <option value="fibonacci">Fibonacci</option>
+      <option value="calculator">Calculator</option>
+      <option value="guessgame">Guessing Game</option>
+      <option value="lists">Lists &amp; Loops</option>
+      <option value="functions">Recursion</option>
+      <option value="strings">Strings</option>
+      <option value="randomex">Random Numbers</option>
+      <option value="dicts">Dictionaries</option>
+    </select>
+    <button onclick="clearOut()">Clear</button>
+    <button class="btn-run" id="runBtn" onclick="runCode()">▶ Run</button>
+  </div>
+</header>
+
+<main>
+  <div class="pane">
+    <div class="pane-bar">
+      <span>Editor <span style="color:var(--amber-px)">· Ctrl+Enter to run</span></span>
+      <div class="status">
+        <div class="dot" id="dot"></div>
+        <span id="statusTxt">Ready</span>
+      </div>
+    </div>
+    <div class="editor-wrap">
+      <pre class="hl-layer" id="hlLayer" aria-hidden="true"></pre>
+      <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="pane-bar">
+      <span>Output</span>
+      <span id="elapsed" style="color:var(--amber-px)"></span>
+    </div>
+    <div class="out-scroll" id="outScroll">
+      <div class="out-empty" id="outEmpty">Run your program to see output here.</div>
+    </div>
+    <div class="in-bar" id="inBar">
+      <span class="in-prompt" id="inPrompt">›</span>
+      <input type="text" id="in-field" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+</main>
+
+<div class="ref-wrap">
+  <div class="ref-toggle" onclick="toggleRef(this)">
+    <span class="ref-toggle-arrow" id="refArrow">▶</span>
+    Language Reference
+  </div>
+  <div class="ref-body" id="refBody">
+    <div class="ref-sec">
+      <h4>Variables</h4>
+      <code>let <em>x</em> be <em>value</em>.</code>
+      <code><em>x</em> be <em>value</em>.</code>
+      <code>let <em>x</em> be get input <em>"Prompt: "</em>.</code>
+      <code>let <em>x</em> be true.</code>
+      <code>let <em>x</em> be nothing.</code>
+    </div>
+    <div class="ref-sec">
+      <h4>Output</h4>
+      <code>print <em>x</em>.</code>
+      <code>say <em>"message"</em>.</code>
+    </div>
+    <div class="ref-sec">
+      <h4>Arithmetic</h4>
+      <code><em>x</em> + <em>y</em> &nbsp; <em>x</em> - <em>y</em></code>
+      <code><em>x</em> * <em>y</em> &nbsp; <em>x</em> / <em>y</em></code>
+      <code><em>x</em> % <em>y</em> &nbsp; <em>x</em> ^ <em>y</em></code>
+      <code>(<em>a</em> + <em>b</em>) * <em>c</em> &nbsp; BEDMAS</code>
+      <code>sqrt of <em>x</em></code>
+      <code>root <em>n</em> of <em>x</em></code>
+    </div>
+    <div class="ref-sec">
+      <h4>Strings</h4>
+      <code><em>x</em> joined with <em>y</em></code>
+      <code>length of <em>x</em></code>
+      <code><em>x</em> as number</code>
+      <code><em>x</em> as text</code>
+    </div>
+    <div class="ref-sec">
+      <h4>Conditions</h4>
+      <code><em>x</em> is <em>y</em> &nbsp; <em>x</em> == <em>y</em></code>
+      <code><em>x</em> is not <em>y</em> &nbsp; <em>x</em> != <em>y</em></code>
+      <code><em>x</em> > <em>y</em> &nbsp; <em>x</em> >= <em>y</em></code>
+      <code><em>x</em> < <em>y</em> &nbsp; <em>x</em> <= <em>y</em></code>
+      <code><em>x</em> contains <em>y</em></code>
+      <code><em>a</em> and <em>b</em> &nbsp; <em>a</em> or <em>b</em> &nbsp; not <em>a</em></code>
+    </div>
+    <div class="ref-sec">
+      <h4>If / Otherwise</h4>
+      <code>if <em>condition</em>:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>otherwise if <em>condition</em>:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>otherwise:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>end if.</code>
+    </div>
+    <div class="ref-sec">
+      <h4>Loops</h4>
+      <code>while <em>cond</em>:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>end while.</code>
+      <code>repeat <em>n</em> times:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>end repeat.</code>
+      <code>for each <em>item</em> in <em>list</em>:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;<em>body</em></code>
+      <code>end for.</code>
+      <code>stop. &nbsp;<em># break loop</em></code>
+    </div>
+    <div class="ref-sec">
+      <h4>Lists</h4>
+      <code>let <em>x</em> be <em>1</em>,<em>2</em>,<em>3</em>.</code>
+      <code>add <em>val</em> to <em>list</em>.</code>
+      <code>remove last from <em>list</em>.</code>
+      <code>remove first from <em>list</em>.</code>
+      <code><em>list</em> at <em>0</em></code>
+    </div>
+    <div class="ref-sec">
+      <h4>Functions</h4>
+      <code>define <em>name</em> with <em>a</em> and <em>b</em>:</code>
+      <code>&nbsp;&nbsp;&nbsp;&nbsp;give back <em>a plus b</em>.</code>
+      <code>end define.</code>
+      <code>call <em>name</em> with <em>x</em> and <em>y</em>.</code>
+      <code>let <em>r</em> be call <em>name</em> with <em>x</em>.</code>
+    </div>
+    <div class="ref-sec">
+      <h4>Random</h4>
+      <code>random number from <em>min</em> to <em>max</em></code>
+    </div>
+    <div class="ref-sec">
+      <h4>Dictionaries</h4>
+      <code>let <em>d</em> be <em>"k"</em>=<em>v</em>,<em>"k2"</em>=<em>v2</em>.</code>
+      <code><em>d</em> at <em>"key"</em></code>
+      <code><em>d</em> at <em>"key"</em> be <em>val</em>.</code>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   ENGLAR INTERPRETER
+   ═══════════════════════════════════════════════════ */
+class Englar {
+  constructor({ onPrint, onInput }) {
+    this.onPrint = onPrint;
+    this.onInput = onInput;
+  }
+
+  async run(src) {
+    this.vars = {};
+    this.fns  = {};
+    this._ret = false;
+    this._brk = false;
+    this._retVal = undefined;
+
+    const lines = src.split('\n')
+      .map(l => l.trim())
+      .filter(l => l && !l.startsWith('#'));
+
+    this._pos = 0;
+    const stmts = this._parseBlock(lines, () => this._pos >= lines.length);
+    await this._execBlock(stmts, this.vars);
+  }
+
+  /* ── PARSER ── */
+  _parseBlock(lines, isDone) {
+    const stmts = [];
+    while (!isDone()) {
+      const l = lines[this._pos];
+      if (l === 'otherwise:' || /^otherwise if .+:$/.test(l) || /^end /.test(l)) break;
+      stmts.push(this._parseStmt(lines));
+    }
+    return stmts;
+  }
+
+  _parseStmt(lines) {
+    const l = lines[this._pos];
+
+    /* if / otherwise if / otherwise */
+    if (/^if .+:$/.test(l)) {
+      const branches = [];
+      // collect if + optional otherwise-if chains
+      while (true) {
+        const cur = lines[this._pos];
+        if (/^if .+:$/.test(cur)) {
+          const cond = cur.slice(3, -1).trim();
+          this._pos++;
+          const body = this._parseBlock(lines, () => {
+            const nx = lines[this._pos];
+            return !nx || nx === 'otherwise:' || /^otherwise if .+:$/.test(nx) || /^end if/.test(nx);
+          });
+          branches.push({ cond, body });
+        } else if (/^otherwise if .+:$/.test(cur)) {
+          const cond = cur.slice(13, -1).trim();
+          this._pos++;
+          const body = this._parseBlock(lines, () => {
+            const nx = lines[this._pos];
+            return !nx || nx === 'otherwise:' || /^otherwise if .+:$/.test(nx) || /^end if/.test(nx);
+          });
+          branches.push({ cond, body });
+        } else break;
+      }
+      let elseBody = null;
+      if (this._pos < lines.length && lines[this._pos] === 'otherwise:') {
+        this._pos++;
+        elseBody = this._parseBlock(lines, () => {
+          const nx = lines[this._pos]; return !nx || /^end if/.test(nx);
+        });
+      }
+      if (this._pos < lines.length && /^end if/.test(lines[this._pos])) this._pos++;
+      return { t: 'if', branches, elseBody };
+    }
+
+    /* while */
+    if (/^while .+:$/.test(l)) {
+      const cond = l.slice(6, -1).trim(); this._pos++;
+      const body = this._parseBlock(lines, () => { const nx = lines[this._pos]; return !nx || /^end while/.test(nx); });
+      if (this._pos < lines.length && /^end while/.test(lines[this._pos])) this._pos++;
+      return { t: 'while', cond, body };
+    }
+
+    /* repeat N times */
+    if (/^repeat .+ times:$/.test(l)) {
+      const cnt = l.replace(/^repeat /, '').replace(/ times:$/, '').trim(); this._pos++;
+      const body = this._parseBlock(lines, () => { const nx = lines[this._pos]; return !nx || /^end repeat/.test(nx); });
+      if (this._pos < lines.length && /^end repeat/.test(lines[this._pos])) this._pos++;
+      return { t: 'repeat', cnt, body };
+    }
+
+    /* for each item in list */
+    if (/^for each .+ in .+:$/.test(l)) {
+      const m = l.match(/^for each (.+) in (.+):$/);
+      this._pos++;
+      const body = this._parseBlock(lines, () => { const nx = lines[this._pos]; return !nx || /^end for/.test(nx); });
+      if (this._pos < lines.length && /^end for/.test(lines[this._pos])) this._pos++;
+      return { t: 'for', varName: m[1].trim(), listExpr: m[2].trim(), body };
+    }
+
+    /* define function */
+    if (/^define .+:$/.test(l)) {
+      const inner = l.slice(7, -1).trim();
+      let name, params;
+      if (inner.includes(' with ')) {
+        const wi = inner.indexOf(' with ');
+        name = inner.slice(0, wi).trim();
+        params = inner.slice(wi + 6).split(' and ').map(p => p.trim());
+      } else { name = inner; params = []; }
+      this._pos++;
+      const body = this._parseBlock(lines, () => { const nx = lines[this._pos]; return !nx || /^end define/.test(nx); });
+      if (this._pos < lines.length && /^end define/.test(lines[this._pos])) this._pos++;
+      return { t: 'def', name, params, body };
+    }
+
+    /* single line */
+    this._pos++;
+    return { t: 'line', text: l };
+  }
+
+  /* ── EXECUTOR ── */
+  async _execBlock(stmts, vars) {
+    for (const s of stmts) {
+      if (this._ret || this._brk) break;
+      switch (s.t) {
+        case 'if': {
+          let done = false;
+          for (const br of s.branches) {
+            if (await this._evalCond(br.cond, vars)) {
+              await this._execBlock(br.body, vars); done = true; break;
+            }
+          }
+          if (!done && s.elseBody) await this._execBlock(s.elseBody, vars);
+          break;
+        }
+        case 'while': {
+          let iters = 0;
+          while (await this._evalCond(s.cond, vars)) {
+            if (++iters > 100000) throw new Error('Loop limit reached (100,000 iterations). Possible infinite loop.');
+            await this._execBlock(s.body, vars);
+            if (this._ret || this._brk) break;
+          }
+          this._brk = false;
+          break;
+        }
+        case 'repeat': {
+          const n = Math.floor(+(await this._evalExpr(s.cnt, vars)));
+          if (isNaN(n) || n < 0) throw new Error(`Invalid repeat count: "${s.cnt}"`);
+          for (let i = 0; i < n; i++) {
+            await this._execBlock(s.body, vars);
+            if (this._ret || this._brk) break;
+          }
+          this._brk = false;
+          break;
+        }
+        case 'for': {
+          const lst = await this._evalExpr(s.listExpr, vars);
+          if (!Array.isArray(lst)) throw new Error(`"${s.listExpr}" is not a list`);
+          for (const item of lst) {
+            vars[s.varName] = item;
+            await this._execBlock(s.body, vars);
+            if (this._ret || this._brk) break;
+          }
+          this._brk = false;
+          break;
+        }
+        case 'def':
+          this.fns[s.name] = { params: s.params, body: s.body };
+          break;
+        case 'line':
+          await this._execLine(s.text, vars);
+          break;
+      }
+    }
+  }
+
+  async _execLine(line, vars) {
+    if (line.endsWith('.')) line = line.slice(0, -1).trim();
+
+    /* let x be <expr> */
+    const letM = line.match(/^let ([a-zA-Z_]\w*) be (.+)$/);
+    if (letM) { vars[letM[1]] = await this._evalAsync(letM[2].trim(), vars); return; }
+
+    /* x at key be <expr> — index assignment for dicts and lists */
+    const atBeM = line.match(/^([a-zA-Z_]\w*) at (.+?) be (.+)$/);
+    if (atBeM) {
+      const container = this._resolve(atBeM[1], vars);
+      const key       = await this._evalAsync(atBeM[2].trim(), vars);
+      const val       = await this._evalAsync(atBeM[3].trim(), vars);
+      if (Array.isArray(container)) container[+key] = val;
+      else if (container && typeof container === 'object') container[String(key)] = val;
+      else throw new Error(`Cannot index-assign into "${atBeM[1]}"`);
+      return;
+    }
+
+    /* x be <expr> — reassign */
+    const beM = line.match(/^([a-zA-Z_]\w*) be (.+)$/);
+    if (beM) { vars[beM[1]] = await this._evalAsync(beM[2].trim(), vars); return; }
+
+    /* print / say */
+    if (/^(print|say) .+/.test(line)) {
+      const val = await this._evalAsync(line.replace(/^(print|say) /, '').trim(), vars);
+      this.onPrint(this._str(val)); return;
+    }
+
+    /* add val to list */
+    const addM = line.match(/^add (.+) to ([a-zA-Z_]\w*)$/);
+    if (addM) {
+      const v = await this._evalAsync(addM[1].trim(), vars);
+      const lst = this._resolve(addM[2], vars);
+      if (!Array.isArray(lst)) throw new Error(`"${addM[2]}" is not a list`);
+      lst.push(v); return;
+    }
+
+    /* remove last/first from list */
+    const remLast = line.match(/^remove last from ([a-zA-Z_]\w*)$/);
+    if (remLast) { const lst = this._resolve(remLast[1], vars); if (!Array.isArray(lst)) throw new Error(`"${remLast[1]}" is not a list`); lst.pop(); return; }
+    const remFirst = line.match(/^remove first from ([a-zA-Z_]\w*)$/);
+    if (remFirst) { const lst = this._resolve(remFirst[1], vars); if (!Array.isArray(lst)) throw new Error(`"${remFirst[1]}" is not a list`); lst.shift(); return; }
+
+    /* give back */
+    if (/^give back .+/.test(line)) {
+      this._retVal = await this._evalAsync(line.slice(10).trim(), vars);
+      this._ret = true; return;
+    }
+
+    /* stop */
+    if (line === 'stop') { this._brk = true; return; }
+
+    /* call (statement form, result discarded) */
+    if (line.startsWith('call ')) { await this._callFn(line.slice(5).trim(), vars); return; }
+
+    throw new Error(`Unknown statement: "${line}"`);
+  }
+
+  /* ── EXPRESSION EVALUATOR (async wrapper) ── */
+  async _evalAsync(expr, vars) {
+    return await this._evalExpr(expr.trim(), vars);
+  }
+
+  /* ── EXPRESSION EVALUATOR (BEDMAS) ── */
+  async _evalExpr(expr, vars) {
+    expr = expr.trim();
+    if (!expr) throw new Error('Empty expression');
+
+    if (expr === 'nothing') return null;
+    if (expr === 'true')    return true;
+    if (expr === 'false')   return false;
+
+    /* call fn */
+    if (expr.startsWith('call ')) return await this._callFn(expr.slice(5).trim(), vars);
+
+    /* get input */
+    if (expr.startsWith('get input')) {
+      const raw = expr.slice(9).trim();
+      const prompt = raw ? await this._evalExpr(raw, vars) : '';
+      return await this.onInput(String(prompt));
+    }
+
+    /* random number from X to Y */
+    const randM = expr.match(/^random number from (.+) to (.+)$/);
+    if (randM) {
+      const lo = Math.ceil( +(await this._evalExpr(randM[1].trim(), vars)));
+      const hi = Math.floor(+(await this._evalExpr(randM[2].trim(), vars)));
+      return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+    }
+
+    /* string literal */
+    if (expr[0] === '"') {
+      let ci = 1; while (ci < expr.length && expr[ci] !== '"') ci++;
+      if (ci === expr.length - 1) return expr.slice(1, -1);
+    }
+
+    /* number literal */
+    if (/^-?\d+(\.\d+)?$/.test(expr)) return +expr;
+
+    /* parentheses wrapping entire expression */
+    if (expr[0] === '(' && this._matchParen(expr, 0) === expr.length - 1)
+      return await this._evalExpr(expr.slice(1, -1), vars);
+
+    /* collection literal (comma outside quotes/parens) */
+    if (this._hasCommaOOQP(expr)) return await this._parseCollection(expr, vars);
+
+    /* postfix conversions */
+    if (expr.endsWith(' as number')) return +(await this._evalExpr(expr.slice(0, -10), vars));
+    if (expr.endsWith(' as text'))   return String(await this._evalExpr(expr.slice(0, -8), vars));
+
+    /* prefix ops */
+    /* sqrt of x */
+    if (expr.startsWith('sqrt of ')) return Math.sqrt(+(await this._evalExpr(expr.slice(8), vars)));
+
+    /* root N of X  e.g. "root 3 of 27" → 3 */
+    const rootM = expr.match(/^root (.+) of (.+)$/);
+    if (rootM) {
+      const n = +(await this._evalExpr(rootM[1].trim(), vars));
+      const x = +(await this._evalExpr(rootM[2].trim(), vars));
+      return Math.pow(x, 1 / n);
+    }
+
+    if (expr.startsWith('length of ')) {
+      const v = await this._evalExpr(expr.slice(10), vars);
+      if (typeof v === 'string' || Array.isArray(v)) return v.length;
+      if (v && typeof v === 'object') return Object.keys(v).length;
+      throw new Error(`Cannot get length of ${this._str(v)}`);
+    }
+    if (expr.startsWith('not ')) return !(await this._evalCond(expr.slice(4), vars));
+
+    /* ── BEDMAS — lowest precedence first, find LAST for left-associativity ── */
+    let op;
+
+    /* joined with — string concat (lowest) */
+    op = this._lastOpOOP(expr, [' joined with ']);
+    if (op) return this._str(await this._evalExpr(expr.slice(0, op.i), vars)) +
+                    this._str(await this._evalExpr(expr.slice(op.i + op.s), vars));
+
+    /* + and − (addition / subtraction) */
+    op = this._lastBinaryAddSub(expr);
+    if (op) {
+      const L = +(await this._evalExpr(expr.slice(0, op.i), vars));
+      const R = +(await this._evalExpr(expr.slice(op.i + 1), vars));
+      return op.t === '+' ? L + R : L - R;
+    }
+
+    /* * / % (multiplication / division / modulo) */
+    op = this._lastOpOOP(expr, ['*', '/', '%']);
+    if (op) {
+      const L = +(await this._evalExpr(expr.slice(0, op.i), vars));
+      const R = +(await this._evalExpr(expr.slice(op.i + 1), vars));
+      if (op.t === '*') return L * R;
+      if (op.t === '/') return L / R;
+      if (op.t === '%') return L % R;
+    }
+
+    /* ^ (exponentiation — right-associative: find FIRST) */
+    op = this._firstOpOOP(expr, ['^']);
+    if (op) return Math.pow(+(await this._evalExpr(expr.slice(0, op.i), vars)),
+                             +(await this._evalExpr(expr.slice(op.i + 1), vars)));
+
+    /* at — index access (highest-precedence binary op) */
+    op = this._lastOpOOP(expr, [' at ']);
+    if (op) {
+      const container = await this._evalExpr(expr.slice(0, op.i), vars);
+      const key       = await this._evalExpr(expr.slice(op.i + op.s), vars);
+      if (Array.isArray(container) || typeof container === 'string') return container[+key] ?? null;
+      if (container && typeof container === 'object') return Object.prototype.hasOwnProperty.call(container, String(key)) ? container[String(key)] : null;
+      throw new Error(`Cannot index into ${this._str(container)}`);
+    }
+
+    /* unary minus: -expr */
+    if (expr[0] === '-') return -(+(await this._evalExpr(expr.slice(1), vars)));
+
+    /* variable */
+    if (/^[a-zA-Z_]\w*$/.test(expr)) {
+      if (expr in vars)       return vars[expr];
+      if (expr in this.vars)  return this.vars[expr];
+      throw new Error(`Variable "${expr}" is not defined`);
+    }
+
+    throw new Error(`Cannot evaluate: "${expr}"`);
+  }
+
+  /* ── CONDITION EVALUATOR ── */
+  async _evalCond(cond, vars) {
+    cond = cond.trim();
+
+    if (cond.startsWith('not ')) return !(await this._evalCond(cond.slice(4), vars));
+
+    /* logical or/and */
+    const orI  = this._firstCondOp(cond, ' or ');
+    if (orI  !== -1) return (await this._evalCond(cond.slice(0, orI), vars)) || (await this._evalCond(cond.slice(orI + 4), vars));
+    const andI = this._firstCondOp(cond, ' and ');
+    if (andI !== -1) return (await this._evalCond(cond.slice(0, andI), vars)) && (await this._evalCond(cond.slice(andI + 5), vars));
+
+    /* comparisons — longer tokens checked first to avoid substring collisions */
+    const cmps = [
+      [' is greater than ', (a,b) => +a >  +b],
+      [' is less than ',    (a,b) => +a <  +b],
+      [' is at least ',     (a,b) => +a >= +b],
+      [' is at most ',      (a,b) => +a <= +b],
+      [' is not ',          (a,b) => a  != b ],
+      [' contains ',        (a,b) => Array.isArray(a) ? a.includes(b) : String(a).includes(String(b))],
+      [' is ',              (a,b) => a  == b ],
+      /* symbol forms — checked >= before >, <= before <, != before =, == before = */
+      ['>=',  (a,b) => +a >= +b],
+      ['<=',  (a,b) => +a <= +b],
+      ['!=',  (a,b) => a  != b ],
+      ['>',   (a,b) => +a >  +b],
+      ['<',   (a,b) => +a <  +b],
+      ['==',  (a,b) => a  == b ],
+    ];
+    for (const [op, fn] of cmps) {
+      const i = this._firstCondOp(cond, op);
+      if (i !== -1) return fn(await this._evalExpr(cond.slice(0, i), vars), await this._evalExpr(cond.slice(i + op.length), vars));
+    }
+
+    return Boolean(await this._evalExpr(cond, vars));
+  }
+
+  /* ── FUNCTION CALL ── */
+  async _callFn(callStr, vars) {
+    let name, argExprs;
+    if (callStr.includes(' with ')) {
+      const wi = callStr.indexOf(' with ');
+      name = callStr.slice(0, wi).trim();
+      const argStr = callStr.slice(wi + 6).trim();
+      /* args separated by comma or " and " */
+      argExprs = argStr.includes(', ')
+        ? argStr.split(', ').map(a => a.trim())
+        : argStr.split(' and ').map(a => a.trim());
+    } else {
+      name = callStr.trim();
+      argExprs = [];
+    }
+
+    const fn = this.fns[name];
+    if (!fn) throw new Error(`Function "${name}" is not defined`);
+
+    /* local scope = copy of globals + params */
+    const local = { ...this.vars };
+    for (let i = 0; i < fn.params.length; i++) {
+      const argE = argExprs[i];
+      if (argE === undefined) throw new Error(`Missing argument ${i+1} for "${name}"`);
+      local[fn.params[i]] = await this._evalAsync(argE, vars);
+    }
+
+    const [sr, sb, sv] = [this._ret, this._brk, this._retVal];
+    this._ret = false; this._brk = false; this._retVal = undefined;
+    await this._execBlock(fn.body, local);
+    const result = this._retVal;
+    this._ret = sr; this._brk = sb; this._retVal = sv;
+    return result;
+  }
+
+  /* ── HELPERS ── */
+  _resolve(name, vars) {
+    if (name in vars) return vars[name];
+    if (name in this.vars) return this.vars[name];
+    throw new Error(`Variable "${name}" is not defined`);
+  }
+
+  /* Index of matching close-paren for open-paren at pos */
+  _matchParen(expr, pos) {
+    let depth = 0;
+    for (let i = pos; i < expr.length; i++) {
+      if (expr[i] === '(') depth++;
+      else if (expr[i] === ')') { if (--depth === 0) return i; }
+    }
+    return -1;
+  }
+
+  /* LAST occurrence of any op — outside quotes AND parens */
+  _lastOpOOP(expr, ops) {
+    let inQ = false, depth = 0, lastI = -1, lastT = null;
+    for (let i = 0; i < expr.length; i++) {
+      const c = expr[i];
+      if (c === '"') inQ = !inQ;
+      if (inQ) continue;
+      if (c === '(') { depth++; continue; }
+      if (c === ')') { depth--; continue; }
+      if (depth > 0) continue;
+      for (const op of ops) {
+        if (expr.slice(i, i + op.length) === op) { lastI = i; lastT = op; }
+      }
+    }
+    return lastI === -1 ? null : { i: lastI, t: lastT, s: lastT.length };
+  }
+
+  /* FIRST occurrence of op — outside quotes AND parens */
+  _firstOpOOP(expr, ops) {
+    let inQ = false, depth = 0;
+    for (let i = 0; i < expr.length; i++) {
+      const c = expr[i];
+      if (c === '"') inQ = !inQ;
+      if (inQ) continue;
+      if (c === '(') { depth++; continue; }
+      if (c === ')') { depth--; continue; }
+      if (depth > 0) continue;
+      for (const op of ops) {
+        if (expr.slice(i, i + op.length) === op) return { i, t: op, s: op.length };
+      }
+    }
+    return null;
+  }
+
+  /* LAST binary + or − (must be preceded by a non-operator character — i.e. end of operand) */
+  _lastBinaryAddSub(expr) {
+    let inQ = false, depth = 0, lastI = -1, lastT = null;
+    for (let i = 0; i < expr.length; i++) {
+      const c = expr[i];
+      if (c === '"') inQ = !inQ;
+      if (inQ) continue;
+      if (c === '(') { depth++; continue; }
+      if (c === ')') { depth--; continue; }
+      if (depth > 0) continue;
+      if (c === '+' || c === '-') {
+        /* find the last non-space char before i */
+        let j = i - 1;
+        while (j >= 0 && expr[j] === ' ') j--;
+        if (j >= 0 && /[\w\)"]/.test(expr[j])) { lastI = i; lastT = c; }
+      }
+    }
+    return lastI === -1 ? null : { i: lastI, t: lastT, s: 1 };
+  }
+
+  /* Find FIRST occurrence of cond op — outside quotes (used for and/or/comparisons) */
+  _firstCondOp(expr, op) {
+    let inQ = false;
+    for (let i = 0; i <= expr.length - op.length; i++) {
+      if (expr[i] === '"') inQ = !inQ;
+      if (!inQ && expr.slice(i, i + op.length) === op) return i;
+    }
+    return -1;
+  }
+
+  _hasCommaOOQP(expr) {
+    let inQ = false, depth = 0;
+    for (const c of expr) {
+      if (c === '"') inQ = !inQ;
+      if (!inQ && c === '(') depth++;
+      if (!inQ && c === ')') depth--;
+      if (!inQ && depth === 0 && c === ',') return true;
+    }
+    return false;
+  }
+
+  /* keep old name as alias so nothing else breaks */
+  _hasCommaOOQ(expr) { return this._hasCommaOOQP(expr); }
+
+  _splitOOQ(expr) {
+    const parts = []; let inQ = false, depth = 0, cur = '';
+    for (const c of expr) {
+      if (c === '"') inQ = !inQ;
+      if (!inQ && c === '(') depth++;
+      if (!inQ && c === ')') depth--;
+      if (!inQ && depth === 0 && c === ',') { parts.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    if (cur.trim()) parts.push(cur.trim());
+    return parts;
+  }
+
+  async _parseCollection(expr, vars) {
+    const parts = this._splitOOQ(expr);
+    if (parts.some(p => p.includes('='))) {
+      const dict = {};
+      for (const p of parts) {
+        const ei = p.indexOf('=');
+        dict[String(await this._evalExpr(p.slice(0,ei).trim(), vars))] = await this._evalExpr(p.slice(ei+1).trim(), vars);
+      }
+      return dict;
+    }
+    return Promise.all(parts.map(p => this._evalExpr(p, vars)));
+  }
+
+  _str(v) {
+    if (v === null || v === undefined) return 'nothing';
+    if (v === true)  return 'true';
+    if (v === false) return 'false';
+    if (Array.isArray(v)) return v.map(x => this._str(x)).join(', ');
+    if (typeof v === 'object') return Object.entries(v).map(([k,x]) => `"${k}"=${this._str(x)}`).join(', ');
+    return String(v);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   UI
+   ═══════════════════════════════════════════════════ */
+let running = false;
+const editor   = document.getElementById('editor');
+const hlLayer  = document.getElementById('hlLayer');
+const outScroll= document.getElementById('outScroll');
+const dot      = document.getElementById('dot');
+const statusTxt= document.getElementById('statusTxt');
+const elapsed  = document.getElementById('elapsed');
+const inBar    = document.getElementById('inBar');
+const inField  = document.getElementById('in-field');
+const inPrompt = document.getElementById('inPrompt');
+const runBtn   = document.getElementById('runBtn');
+
+/* ── SYNTAX HIGHLIGHTER ── */
+const KW = new Set([
+  'let','be','print','say','if','otherwise','end','while','repeat','times',
+  'for','each','in','define','with','give','back','stop','add','remove',
+  'last','first','from','call','and','or','not','true','false','nothing',
+  'as','number','text','length','of','sqrt','root','random','get','input',
+  'joined','to','between'
+]);
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlightLine(line) {
+  let out = '', i = 0;
+  while (i < line.length) {
+    // Comment
+    if (line[i] === '#') { out += `<span class="c">${esc(line.slice(i))}</span>`; break; }
+    // String
+    if (line[i] === '"') {
+      let j = i + 1;
+      while (j < line.length && line[j] !== '"') j++;
+      if (j < line.length) j++;
+      out += `<span class="s">${esc(line.slice(i, j))}</span>`;
+      i = j; continue;
+    }
+    // Number (not preceded by word char)
+    const numM = line.slice(i).match(/^\d+(\.\d+)?/);
+    if (numM && (i === 0 || !/\w/.test(line[i-1]))) {
+      out += `<span class="n">${numM[0]}</span>`;
+      i += numM[0].length; continue;
+    }
+    // Two-char operators
+    const two = line.slice(i, i+2);
+    if (['>=','<=','==','!='].includes(two)) {
+      out += `<span class="o">${esc(two)}</span>`; i += 2; continue;
+    }
+    // One-char operators
+    if ('+-*/%^><'.includes(line[i])) {
+      out += `<span class="o">${esc(line[i])}</span>`; i++; continue;
+    }
+    // Punctuation
+    if ('.,:()\n'.includes(line[i])) {
+      out += `<span class="p">${esc(line[i])}</span>`; i++; continue;
+    }
+    // Word
+    const wm = line.slice(i).match(/^[a-zA-Z_]\w*/);
+    if (wm) {
+      out += KW.has(wm[0]) ? `<span class="k">${wm[0]}</span>` : esc(wm[0]);
+      i += wm[0].length; continue;
+    }
+    out += esc(line[i]); i++;
+  }
+  return out;
+}
+
+function syncHighlight() {
+  const lines = editor.value.split('\n');
+  hlLayer.innerHTML = lines.map(highlightLine).join('\n') + '\n';
+  hlLayer.scrollTop  = editor.scrollTop;
+  hlLayer.scrollLeft = editor.scrollLeft;
+}
+editor.addEventListener('input',  syncHighlight);
+editor.addEventListener('scroll', () => {
+  hlLayer.scrollTop  = editor.scrollTop;
+  hlLayer.scrollLeft = editor.scrollLeft;
+});
+
+function emit(text, cls = '') {
+  const e = document.getElementById('outEmpty');
+  if (e) e.remove();
+  const row = document.createElement('div');
+  row.className = 'out-line' + (cls ? ' '+cls : '');
+  row.innerHTML = `<span class="out-glyph">${cls==='err'?'✗':cls==='sys'?'·':cls==='inp'?'‹':'›'}</span><span class="out-text"></span>`;
+  row.querySelector('.out-text').textContent = text;
+  outScroll.appendChild(row);
+  outScroll.scrollTop = outScroll.scrollHeight;
+}
+
+function setStatus(state, txt) {
+  dot.className = 'dot' + (state ? ' '+state : '');
+  statusTxt.textContent = txt;
+}
+
+async function requestInput(prompt) {
+  return new Promise(resolve => {
+    inPrompt.textContent = prompt || '›';
+    inBar.classList.add('show');
+    inField.value = ''; inField.focus();
+    const done = e => {
+      if (e.key !== 'Enter') return;
+      const val = inField.value;
+      inField.removeEventListener('keydown', done);
+      inBar.classList.remove('show');
+      emit((prompt || '') + val, 'inp');
+      resolve(val);
+    };
+    inField.addEventListener('keydown', done);
+  });
+}
+
+async function runCode() {
+  if (running) return;
+  const code = editor.value.trim();
+  if (!code) return;
+  running = true;
+  runBtn.disabled = true;
+  setStatus('running', 'Running…');
+  outScroll.innerHTML = '';
+  elapsed.textContent = '';
+
+  const t0 = Date.now();
+  const eng = new Englar({ onPrint: t => emit(t), onInput: requestInput });
+  try {
+    await eng.run(code);
+    const ms = Date.now() - t0;
+    emit(`Finished in ${ms}ms`, 'sys');
+    elapsed.textContent = ms + 'ms';
+    setStatus('', 'Ready');
+  } catch(err) {
+    emit(err.message, 'err');
+    setStatus('error', 'Error');
+  }
+  running = false;
+  runBtn.disabled = false;
+}
+
+function clearOut() {
+  outScroll.innerHTML = '<div class="out-empty" id="outEmpty">Run your program to see output here.</div>';
+  elapsed.textContent = '';
+  setStatus('', 'Ready');
+}
+
+function toggleRef(btn) {
+  const body = document.getElementById('refBody');
+  const arrow = document.getElementById('refArrow');
+  const open = body.classList.toggle('open');
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+/* Tab in editor */
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart, en = editor.selectionEnd;
+    editor.value = editor.value.slice(0,s) + '    ' + editor.value.slice(en);
+    editor.selectionStart = editor.selectionEnd = s + 4;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+});
+
+/* ── EXAMPLE PROGRAMS ── */
+const EXAMPLES = {
+hello: `# Hello, World!
+let name be "World".
+say "Hello, " joined with name joined with "!".
+print "Welcome to Englar — natural language programming.".`,
+
+fizzbuzz: `# FizzBuzz 1 to 30
+let i be 1.
+while i <= 30:
+    if i % 15 == 0:
+        print "FizzBuzz".
+    otherwise if i % 3 == 0:
+        print "Fizz".
+    otherwise if i % 5 == 0:
+        print "Buzz".
+    otherwise:
+        print i.
+    end if.
+    i be i + 1.
+end while.`,
+
+fibonacci: `# First 12 Fibonacci numbers
+let a be 0.
+let b be 1.
+let count be 0.
+while count < 12:
+    print a.
+    let tmp be a + b.
+    a be b.
+    b be tmp.
+    count be count + 1.
+end while.`,
+
+calculator: `# Calculator with functions
+define add with a and b:
+    give back a + b.
+end define.
+
+define subtract with a and b:
+    give back a - b.
+end define.
+
+define multiply with a and b:
+    give back a * b.
+end define.
+
+define divide with a and b:
+    if b == 0:
+        give back "Error: division by zero".
+    end if.
+    give back a / b.
+end define.
+
+define power with base and exp:
+    give back base ^ exp.
+end define.
+
+let x be 6.
+let y be 4.
+print x joined with " + " joined with y joined with " = " joined with call add with x and y.
+print x joined with " - " joined with y joined with " = " joined with call subtract with x and y.
+print x joined with " × " joined with y joined with " = " joined with call multiply with x and y.
+print x joined with " ÷ " joined with y joined with " = " joined with call divide with x and y.
+print x joined with " ^ " joined with y joined with " = " joined with call power with x and y.
+
+# BEDMAS example
+let result be (x + y) * (x - y).
+print "(" joined with x joined with " + " joined with y joined with ") × (" joined with x joined with " - " joined with y joined with ") = " joined with result.`,
+
+guessgame: `# Number guessing game
+# The secret number is 42 — try to find it!
+let secret be 42.
+let found be false.
+let tries be 0.
+
+print "I am thinking of a number between 1 and 100.".
+print "Can you guess it?".
+
+while found is false:
+    let raw be get input "Your guess: ".
+    let guess be raw as number.
+    tries be tries + 1.
+
+    if guess == secret:
+        found be true.
+        print "Correct! You got it in " joined with tries joined with " tries.".
+    otherwise if guess < secret:
+        print "Too low! Try higher.".
+    otherwise:
+        print "Too high! Try lower.".
+    end if.
+end while.`,
+
+lists: `# Lists, loops, and aggregates
+let scores be 88,45,92,67,100,55,73.
+print "Scores: " joined with scores.
+print "Count: " joined with length of scores.
+
+# Find the highest score
+let high be scores at 0.
+for each s in scores:
+    if s > high:
+        high be s.
+    end if.
+end for.
+print "Highest: " joined with high.
+
+# Sum and average
+let total be 0.
+for each s in scores:
+    total be total + s.
+end for.
+let avg be total / length of scores.
+print "Total: " joined with total.
+print "Average: " joined with avg.
+
+# Filter scores above 70
+let passing be 0.
+for each s in scores:
+    if s >= 70:
+        passing be passing + 1.
+    end if.
+end for.
+print "Passing (≥70): " joined with passing.`,
+
+functions: `# Recursive functions
+define factorial with n:
+    if n <= 1:
+        give back 1.
+    end if.
+    let sub be call factorial with n - 1.
+    give back n * sub.
+end define.
+
+define gcd with a and b:
+    if b == 0:
+        give back a.
+    end if.
+    give back call gcd with b and a % b.
+end define.
+
+# Factorials
+let i be 1.
+while i <= 8:
+    print i joined with "! = " joined with call factorial with i.
+    i be i + 1.
+end while.
+
+# Powers of 2 using ^ operator
+print "---".
+let p be 0.
+while p <= 8:
+    print "2^" joined with p joined with " = " joined with 2 ^ p.
+    p be p + 1.
+end while.
+
+# GCD
+print "---".
+print "GCD(48, 18) = " joined with call gcd with 48 and 18.
+print "GCD(100, 75) = " joined with call gcd with 100 and 75.`,
+
+strings: `# String operations
+let first be "Englar".
+let second be " is fun!".
+let combined be first joined with second.
+print combined.
+print "Length: " joined with length of combined.
+
+# Build a sentence word by word
+let words be "The","quick","brown","fox".
+let sentence be "".
+for each word in words:
+    if sentence is "":
+        sentence be word.
+    otherwise:
+        sentence be sentence joined with " " joined with word.
+    end if.
+end for.
+print sentence.
+
+# Number to text and back
+let num be 1234.
+let txt be num as text.
+print "As text: " joined with txt.
+print "Length of number: " joined with length of txt.
+
+let str be "99".
+let back be str as number.
+print "Back to number: " joined with back + 1.`,
+
+randomex: `# Random numbers
+print "Rolling a dice 10 times:".
+let i be 0.
+while i < 10:
+    let roll be random number from 1 to 6.
+    print "Roll " joined with (i + 1) joined with ": " joined with roll.
+    i be i + 1.
+end while.
+
+# Pick a random item from a list
+let colours be "red","blue","green","yellow","purple".
+let pick be random number from 0 to 4.
+print "Random colour: " joined with colours at pick.
+
+# Approximate π with Monte Carlo method
+let inside be 0.
+let total be 1000.
+let j be 0.
+while j < total:
+    let x be random number from -1000 to 1000.
+    let y be random number from -1000 to 1000.
+    if x * x + y * y <= 1000000:
+        inside be inside + 1.
+    end if.
+    j be j + 1.
+end while.
+let pi_approx be (inside * 4) / total.
+print "π ≈ " joined with pi_approx joined with " (Monte Carlo, n=1000)".`,
+
+dicts: `# Dictionaries — key=value collections
+
+# Create a dictionary
+let person be "name"="Alice","age"=30,"city"="London".
+print person.
+
+# Access individual keys
+print "Name: " joined with person at "name".
+print "Age:  " joined with person at "age".
+print "City: " joined with person at "city".
+
+# Update a value
+person at "age" be 31.
+print "Birthday! Now " joined with person at "age".
+
+# Build a word-frequency counter
+let text be "the","cat","sat","on","the","mat","the","cat".
+let freq be "the"=0,"cat"=0,"sat"=0,"on"=0,"mat"=0.
+for each word in text:
+    if freq at word is not nothing:
+        freq at word be (freq at word) + 1.
+    end if.
+end for.
+print "Word frequencies:".
+print "the: " joined with freq at "the".
+print "cat: " joined with freq at "cat".
+print "sat: " joined with freq at "sat".
+print "on:  " joined with freq at "on".
+print "mat: " joined with freq at "mat".
+
+# Use a dictionary as a lookup table (simple cipher key)
+let cipher be "a"="@","e"="3","i"="!","o"="0","u"="v".
+let msg be "hello".
+let encoded be "".
+let idx be 0.
+while idx < length of msg:
+    let ch be msg at idx.
+    let replacement be cipher at ch.
+    if replacement is nothing:
+        encoded be encoded joined with ch.
+    otherwise:
+        encoded be encoded joined with replacement.
+    end if.
+    idx be idx + 1.
+end while.
+print "Original: " joined with msg.
+print "Encoded:  " joined with encoded.`
+};
+
+function loadEx(name) {
+  if (!name) return;
+  editor.value = EXAMPLES[name] || '';
+  document.getElementById('exSel').value = '';
+  syncHighlight();
+  editor.focus();
+}
+
+editor.value = EXAMPLES.hello;
+syncHighlight();
+</script>
+</body>
+</html>

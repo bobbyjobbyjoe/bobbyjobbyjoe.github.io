@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Englar Language Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0b0906;
+  --bg2:     #120f0a;
+  --bg3:     #1c1812;
+  --amber:   #dba84a;
+  --amber-hi:#f0c060;
+  --amber-lo:#7a5e25;
+  --amber-px:#2e2210;
+  --teal:    #5bb89a;
+  --red:     #cc5c4a;
+  --lavender:#c8a0e0;
+  --green:   #a8d8a8;
+  --border:  #241e14;
+  --font:    'Courier Prime', 'Courier New', monospace;
+  --serif:   'Playfair Display', Georgia, serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--amber);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* ── SIDEBAR ── */
+nav {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 24px 0 40px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-px) transparent;
+}
+.nav-logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.nav-logo h1 {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--amber-hi);
+  letter-spacing: 3px;
+}
+.nav-logo p {
+  font-size: 10px;
+  color: var(--amber-lo);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+nav a {
+  display: block;
+  padding: 5px 20px;
+  font-size: 11.5px;
+  color: var(--amber-lo);
+  text-decoration: none;
+  letter-spacing: .5px;
+  transition: color .12s, background .12s;
+}
+nav a:hover { color: var(--amber); background: var(--amber-px); }
+nav .nav-section {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-lo);
+  padding: 14px 20px 4px;
+  opacity: .5;
+}
+
+/* ── MAIN ── */
+main {
+  flex: 1;
+  padding: 48px 56px;
+  max-width: 860px;
+}
+
+/* ── TYPOGRAPHY ── */
+h1 {
+  font-family: var(--serif);
+  font-size: 32px;
+  color: var(--amber-hi);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+h2 {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--amber-hi);
+  margin: 52px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+h3 {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin: 28px 0 10px;
+}
+p { color: var(--amber); margin-bottom: 12px; line-height: 1.75; }
+p + p { margin-top: 0; }
+.lead {
+  font-size: 15px;
+  color: var(--amber-lo);
+  margin-bottom: 32px;
+  line-height: 1.8;
+}
+
+/* ── CODE BLOCKS ── */
+pre {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber-lo);
+  padding: 14px 18px;
+  margin: 12px 0 20px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.75;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-px) transparent;
+}
+code { font-family: var(--font); }
+pre code { color: var(--amber); }
+
+/* token colours in docs code blocks */
+pre .k  { color: #e8a84a; font-weight: 700; }
+pre .s  { color: var(--teal); }
+pre .n  { color: var(--green); }
+pre .o  { color: var(--lavender); }
+pre .c  { color: var(--amber-lo); font-style: italic; }
+pre .p  { color: var(--amber-lo); }
+
+/* inline code */
+:not(pre) > code {
+  background: var(--bg3);
+  color: var(--amber-hi);
+  padding: 1px 6px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+}
+
+/* ── TABLES ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 24px;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-lo);
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--amber-px);
+  vertical-align: top;
+}
+td:first-child { white-space: nowrap; }
+td code { font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+
+/* ── CALLOUT ── */
+.note {
+  background: var(--bg3);
+  border-left: 3px solid var(--teal);
+  padding: 10px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--amber-lo);
+}
+.note strong { color: var(--teal); }
+
+/* ── DIVIDER ── */
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+
+/* ── HIGHLIGHT HELPER ── */
+.t-k  { color: #e8a84a; font-weight: 700; }
+.t-s  { color: var(--teal); }
+.t-n  { color: var(--green); }
+.t-o  { color: var(--lavender); }
+
+@media (max-width: 700px) {
+  nav { display: none; }
+  main { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <h1>Englar</h1>
+    <p>Language Reference</p>
+  </div>
+  <span class="nav-section">Getting Started</span>
+  <a href="#intro">Introduction</a>
+  <a href="#syntax">Syntax Rules</a>
+  <span class="nav-section">Core Language</span>
+  <a href="#variables">Variables</a>
+  <a href="#types">Data Types</a>
+  <a href="#output">Output</a>
+  <a href="#input">Input</a>
+  <a href="#arithmetic">Arithmetic</a>
+  <a href="#strings">Strings</a>
+  <a href="#conditions">Conditions</a>
+  <span class="nav-section">Control Flow</span>
+  <a href="#if">If / Otherwise</a>
+  <a href="#while">While Loop</a>
+  <a href="#repeat">Repeat Loop</a>
+  <a href="#for">For Each Loop</a>
+  <span class="nav-section">Data Structures</span>
+  <a href="#lists">Lists</a>
+  <a href="#dicts">Dictionaries</a>
+  <span class="nav-section">Functions</span>
+  <a href="#functions">Define &amp; Call</a>
+  <a href="#recursion">Recursion</a>
+  <span class="nav-section">Built-ins</span>
+  <a href="#math">Math</a>
+  <a href="#random">Random Numbers</a>
+  <a href="#convert">Conversions</a>
+  <span class="nav-section">Reference</span>
+  <a href="#keywords">Keyword List</a>
+  <a href="#cheatsheet">Cheat Sheet</a>
+</nav>
+
+<main>
+
+  <h1>Englar</h1>
+  <p class="lead">A natural language programming language. Englar reads like English and runs like code. Every statement ends with a period. Indentation is purely for readability — the interpreter ignores it.</p>
+
+  <!-- ══ INTRODUCTION ══ -->
+  <h2 id="intro">Introduction</h2>
+  <p>Englar is designed around one idea: <em>if you can say it, you can code it.</em> Variables are declared with plain sentences, conditions read like questions, and loops read like instructions.</p>
+  <pre><code><span class="c"># A complete Englar program</span>
+<span class="k">let</span> name <span class="k">be</span> <span class="s">"World"</span><span class="p">.</span>
+<span class="k">say</span> <span class="s">"Hello, "</span> <span class="k">joined with</span> name <span class="k">joined with</span> <span class="s">"!"</span><span class="p">.</span></code></pre>
+
+  <!-- ══ SYNTAX RULES ══ -->
+  <h2 id="syntax">Syntax Rules</h2>
+  <p>Englar has just four rules:</p>
+  <table>
+    <thead><tr><th>Rule</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Statements end with <code>.</code></td><td>Every line of executable code ends with a full stop.</td></tr>
+      <tr><td>Blocks end with <code>end &lt;keyword&gt;.</code></td><td>e.g. <code>end if.</code>, <code>end while.</code>, <code>end define.</code></td></tr>
+      <tr><td>Comments start with <code>#</code></td><td>Anything after <code>#</code> on a line is ignored.</td></tr>
+      <tr><td>Indentation is optional</td><td>Use it for readability; the interpreter doesn't require it.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ VARIABLES ══ -->
+  <h2 id="variables">Variables</h2>
+  <h3>Declaring a Variable</h3>
+  <p>Use <code>let</code> to create a new variable:</p>
+  <pre><code><span class="k">let</span> score <span class="k">be</span> <span class="n">100</span><span class="p">.</span>
+<span class="k">let</span> name <span class="k">be</span> <span class="s">"Alice"</span><span class="p">.</span>
+<span class="k">let</span> active <span class="k">be</span> <span class="k">true</span><span class="p">.</span>
+<span class="k">let</span> result <span class="k">be</span> <span class="k">nothing</span><span class="p">.</span></code></pre>
+
+  <h3>Reassigning a Variable</h3>
+  <p>Once declared, drop the <code>let</code>:</p>
+  <pre><code>score <span class="k">be</span> <span class="n">200</span><span class="p">.</span>
+name <span class="k">be</span> <span class="s">"Bob"</span><span class="p">.</span></code></pre>
+
+  <div class="note"><strong>Note:</strong> Variable names must start with a letter or underscore and contain only letters, digits, and underscores. They are case-sensitive.</div>
+
+  <!-- ══ DATA TYPES ══ -->
+  <h2 id="types">Data Types</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Example</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Number</td><td><code>42</code>, <code>3.14</code>, <code>-7</code></td><td>All numbers are floating-point.</td></tr>
+      <tr><td>Text</td><td><code>"hello"</code></td><td>Enclosed in double quotes.</td></tr>
+      <tr><td>Boolean</td><td><code>true</code>, <code>false</code></td><td>Lowercase only.</td></tr>
+      <tr><td>Nothing</td><td><code>nothing</code></td><td>Represents the absence of a value (like null).</td></tr>
+      <tr><td>List</td><td><code>1, 2, 3</code></td><td>See <a href="#lists">Lists</a>.</td></tr>
+      <tr><td>Dictionary</td><td><code>"a"=1, "b"=2</code></td><td>See <a href="#dicts">Dictionaries</a>.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ OUTPUT ══ -->
+  <h2 id="output">Output</h2>
+  <p>Both <code>print</code> and <code>say</code> are identical — use whichever reads more naturally:</p>
+  <pre><code><span class="k">print</span> <span class="s">"Hello!"</span><span class="p">.</span>
+<span class="k">say</span> <span class="s">"The answer is "</span> <span class="k">joined with</span> <span class="n">42</span><span class="p">.</span>
+<span class="k">print</span> score<span class="p">.</span></code></pre>
+  <p>Collections are printed in Englar syntax — a list prints as <code>1, 2, 3</code> and a dictionary as <code>"a"=1, "b"=2</code>.</p>
+
+  <!-- ══ INPUT ══ -->
+  <h2 id="input">Input</h2>
+  <p>Use <code>get input</code> to ask the user for a value. The result is always text — convert with <code>as number</code> if needed.</p>
+  <pre><code><span class="k">let</span> name <span class="k">be</span> <span class="k">get input</span> <span class="s">"What is your name? "</span><span class="p">.</span>
+<span class="k">say</span> <span class="s">"Hello, "</span> <span class="k">joined with</span> name<span class="p">.</span>
+
+<span class="k">let</span> raw <span class="k">be</span> <span class="k">get input</span> <span class="s">"Enter a number: "</span><span class="p">.</span>
+<span class="k">let</span> n <span class="k">be</span> raw <span class="k">as number</span><span class="p">.</span></code></pre>
+
+  <!-- ══ ARITHMETIC ══ -->
+  <h2 id="arithmetic">Arithmetic</h2>
+  <p>Englar uses standard mathematical symbols and respects <strong>BEDMAS</strong> (Brackets, Exponents, Division/Multiplication, Addition/Subtraction).</p>
+  <table>
+    <thead><tr><th>Operator</th><th>Meaning</th><th>Example</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>+</code></td><td>Addition</td><td><code>3 + 4</code></td><td><code>7</code></td></tr>
+      <tr><td><code>-</code></td><td>Subtraction</td><td><code>10 - 3</code></td><td><code>7</code></td></tr>
+      <tr><td><code>*</code></td><td>Multiplication</td><td><code>3 * 4</code></td><td><code>12</code></td></tr>
+      <tr><td><code>/</code></td><td>Division</td><td><code>10 / 4</code></td><td><code>2.5</code></td></tr>
+      <tr><td><code>%</code></td><td>Modulo (remainder)</td><td><code>10 % 3</code></td><td><code>1</code></td></tr>
+      <tr><td><code>^</code></td><td>Exponentiation</td><td><code>2 ^ 8</code></td><td><code>256</code></td></tr>
+      <tr><td><code>( )</code></td><td>Brackets (highest precedence)</td><td><code>(2 + 3) * 4</code></td><td><code>20</code></td></tr>
+    </tbody>
+  </table>
+  <pre><code><span class="k">let</span> area <span class="k">be</span> <span class="n">3.14159</span> <span class="o">*</span> radius <span class="o">^</span> <span class="n">2</span><span class="p">.</span>
+<span class="k">let</span> result <span class="k">be</span> (<span class="n">10</span> <span class="o">+</span> <span class="n">5</span>) <span class="o">*</span> (<span class="n">10</span> <span class="o">-</span> <span class="n">5</span>)<span class="p">.</span>    <span class="c"># 75</span>
+<span class="k">let</span> rem <span class="k">be</span> <span class="n">17</span> <span class="o">%</span> <span class="n">5</span><span class="p">.</span>                    <span class="c"># 2</span></code></pre>
+
+  <!-- ══ STRINGS ══ -->
+  <h2 id="strings">Strings</h2>
+  <h3>Concatenation</h3>
+  <pre><code><span class="k">let</span> full <span class="k">be</span> <span class="s">"Hello, "</span> <span class="k">joined with</span> name <span class="k">joined with</span> <span class="s">"!"</span><span class="p">.</span></code></pre>
+
+  <h3>Length</h3>
+  <pre><code><span class="k">let</span> n <span class="k">be</span> <span class="k">length of</span> <span class="s">"hello"</span><span class="p">.</span>    <span class="c"># 5</span>
+<span class="k">let</span> n <span class="k">be</span> <span class="k">length of</span> myList<span class="p">.</span>    <span class="c"># works for lists and dicts too</span></code></pre>
+
+  <h3>Character Access</h3>
+  <pre><code><span class="k">let</span> ch <span class="k">be</span> <span class="s">"hello"</span> <span class="k">at</span> <span class="n">0</span><span class="p">.</span>    <span class="c"># "h"</span>
+<span class="k">let</span> ch <span class="k">be</span> word <span class="k">at</span> i<span class="p">.</span></code></pre>
+
+  <h3>Conversions</h3>
+  <pre><code><span class="k">let</span> n <span class="k">be</span> <span class="s">"42"</span> <span class="k">as number</span><span class="p">.</span>      <span class="c"># 42</span>
+<span class="k">let</span> s <span class="k">be</span> <span class="n">100</span> <span class="k">as text</span><span class="p">.</span>         <span class="c"># "100"</span></code></pre>
+
+  <!-- ══ CONDITIONS ══ -->
+  <h2 id="conditions">Conditions</h2>
+  <p>Englar supports both English words and mathematical symbols for comparisons — use whichever feels right. Both forms can be mixed freely.</p>
+  <table>
+    <thead><tr><th>English form</th><th>Symbol form</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>x is y</code></td><td><code>x == y</code></td><td>Equal</td></tr>
+      <tr><td><code>x is not y</code></td><td><code>x != y</code></td><td>Not equal</td></tr>
+      <tr><td><code>x is greater than y</code></td><td><code>x > y</code></td><td>Greater than</td></tr>
+      <tr><td><code>x is less than y</code></td><td><code>x &lt; y</code></td><td>Less than</td></tr>
+      <tr><td><code>x is at least y</code></td><td><code>x >= y</code></td><td>Greater than or equal</td></tr>
+      <tr><td><code>x is at most y</code></td><td><code>x &lt;= y</code></td><td>Less than or equal</td></tr>
+      <tr><td><code>x contains y</code></td><td>—</td><td>List/string contains value</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Logical Operators</h3>
+  <pre><code><span class="k">if</span> x <span class="o">></span> <span class="n">0</span> <span class="k">and</span> x <span class="o">&lt;</span> <span class="n">100</span><span class="p">:</span>
+<span class="k">if</span> name <span class="k">is</span> <span class="s">"Alice"</span> <span class="k">or</span> name <span class="k">is</span> <span class="s">"Bob"</span><span class="p">:</span>
+<span class="k">if</span> <span class="k">not</span> active<span class="p">:</span></code></pre>
+
+  <!-- ══ IF ══ -->
+  <h2 id="if">If / Otherwise</h2>
+  <pre><code><span class="k">if</span> score <span class="o">>=</span> <span class="n">90</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"Grade A"</span><span class="p">.</span>
+<span class="k">otherwise if</span> score <span class="o">>=</span> <span class="n">70</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"Grade B"</span><span class="p">.</span>
+<span class="k">otherwise if</span> score <span class="o">>=</span> <span class="n">50</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"Grade C"</span><span class="p">.</span>
+<span class="k">otherwise</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"Grade F"</span><span class="p">.</span>
+<span class="k">end if.</span></code></pre>
+  <div class="note"><strong>Note:</strong> You may have any number of <code>otherwise if</code> branches. The final <code>otherwise:</code> is optional.</div>
+
+  <!-- ══ WHILE ══ -->
+  <h2 id="while">While Loop</h2>
+  <p>Repeats its body as long as the condition is true. Use <code>stop.</code> to exit early.</p>
+  <pre><code><span class="k">let</span> i <span class="k">be</span> <span class="n">1</span><span class="p">.</span>
+<span class="k">while</span> i <span class="o">&lt;=</span> <span class="n">10</span><span class="p">:</span>
+    <span class="k">print</span> i<span class="p">.</span>
+    i <span class="k">be</span> i <span class="o">+</span> <span class="n">1</span><span class="p">.</span>
+<span class="k">end while.</span>
+
+<span class="c"># Early exit with stop.</span>
+<span class="k">while</span> <span class="k">true</span><span class="p">:</span>
+    <span class="k">let</span> x <span class="k">be</span> <span class="k">get input</span> <span class="s">"Enter 0 to quit: "</span><span class="p">.</span>
+    <span class="k">if</span> x <span class="k">is</span> <span class="s">"0"</span><span class="p">:</span>
+        <span class="k">stop</span><span class="p">.</span>
+    <span class="k">end if.</span>
+<span class="k">end while.</span></code></pre>
+
+  <!-- ══ REPEAT ══ -->
+  <h2 id="repeat">Repeat Loop</h2>
+  <p>Runs its body a fixed number of times. The count can be any expression.</p>
+  <pre><code><span class="k">repeat</span> <span class="n">5</span> <span class="k">times</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"hello"</span><span class="p">.</span>
+<span class="k">end repeat.</span>
+
+<span class="k">let</span> n <span class="k">be</span> <span class="n">10</span><span class="p">.</span>
+<span class="k">repeat</span> n <span class="k">times</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"tick"</span><span class="p">.</span>
+<span class="k">end repeat.</span></code></pre>
+
+  <!-- ══ FOR ══ -->
+  <h2 id="for">For Each Loop</h2>
+  <p>Iterates over every item in a list.</p>
+  <pre><code><span class="k">let</span> fruits <span class="k">be</span> <span class="s">"apple"</span><span class="p">,</span><span class="s">"banana"</span><span class="p">,</span><span class="s">"cherry"</span><span class="p">.</span>
+<span class="k">for each</span> fruit <span class="k">in</span> fruits<span class="p">:</span>
+    <span class="k">print</span> fruit<span class="p">.</span>
+<span class="k">end for.</span>
+
+<span class="c"># Summing a list</span>
+<span class="k">let</span> total <span class="k">be</span> <span class="n">0</span><span class="p">.</span>
+<span class="k">for each</span> n <span class="k">in</span> nums<span class="p">:</span>
+    total <span class="k">be</span> total <span class="o">+</span> n<span class="p">.</span>
+<span class="k">end for.</span></code></pre>
+
+  <!-- ══ LISTS ══ -->
+  <h2 id="lists">Lists</h2>
+  <p>Lists are ordered, zero-indexed collections of any values.</p>
+  <h3>Creating a List</h3>
+  <pre><code><span class="k">let</span> nums <span class="k">be</span> <span class="n">1</span><span class="p">,</span><span class="n">2</span><span class="p">,</span><span class="n">3</span><span class="p">,</span><span class="n">4</span><span class="p">,</span><span class="n">5</span><span class="p">.</span>
+<span class="k">let</span> names <span class="k">be</span> <span class="s">"Alice"</span><span class="p">,</span><span class="s">"Bob"</span><span class="p">,</span><span class="s">"Carol"</span><span class="p">.</span>
+<span class="k">let</span> mixed <span class="k">be</span> <span class="n">1</span><span class="p">,</span><span class="s">"two"</span><span class="p">,</span><span class="k">true</span><span class="p">.</span></code></pre>
+
+  <h3>Accessing Items</h3>
+  <pre><code><span class="k">let</span> first <span class="k">be</span> names <span class="k">at</span> <span class="n">0</span><span class="p">.</span>    <span class="c"># "Alice"</span>
+<span class="k">let</span> last <span class="k">be</span> names <span class="k">at</span> <span class="n">2</span><span class="p">.</span>     <span class="c"># "Carol"</span></code></pre>
+
+  <h3>Modifying a List</h3>
+  <pre><code><span class="k">add</span> <span class="s">"Dave"</span> <span class="k">to</span> names<span class="p">.</span>          <span class="c"># append to end</span>
+<span class="k">remove last from</span> names<span class="p">.</span>       <span class="c"># remove last item</span>
+<span class="k">remove first from</span> names<span class="p">.</span>      <span class="c"># remove first item</span></code></pre>
+
+  <h3>Length</h3>
+  <pre><code><span class="k">let</span> n <span class="k">be</span> <span class="k">length of</span> names<span class="p">.</span></code></pre>
+
+  <div class="note"><strong>Note:</strong> List indices start at <strong>0</strong>. Accessing an out-of-bounds index returns <code>nothing</code>.</div>
+
+  <!-- ══ DICTS ══ -->
+  <h2 id="dicts">Dictionaries</h2>
+  <p>Dictionaries store key-value pairs. Keys are text strings; values can be any type.</p>
+  <h3>Creating a Dictionary</h3>
+  <pre><code><span class="k">let</span> person <span class="k">be</span> <span class="s">"name"</span><span class="o">=</span><span class="s">"Alice"</span><span class="p">,</span><span class="s">"age"</span><span class="o">=</span><span class="n">30</span><span class="p">,</span><span class="s">"city"</span><span class="o">=</span><span class="s">"London"</span><span class="p">.</span>
+<span class="k">print</span> person<span class="p">.</span>    <span class="c"># "name"=Alice, "age"=30, "city"=London</span></code></pre>
+
+  <h3>Reading a Value</h3>
+  <pre><code><span class="k">let</span> n <span class="k">be</span> person <span class="k">at</span> <span class="s">"name"</span><span class="p">.</span>    <span class="c"># "Alice"</span>
+<span class="k">print</span> person <span class="k">at</span> <span class="s">"age"</span><span class="p">.</span>        <span class="c"># 30</span></code></pre>
+
+  <h3>Setting / Updating a Value</h3>
+  <pre><code>person <span class="k">at</span> <span class="s">"age"</span> <span class="k">be</span> <span class="n">31</span><span class="p">.</span>
+person <span class="k">at</span> <span class="s">"email"</span> <span class="k">be</span> <span class="s">"alice@example.com"</span><span class="p">.</span>    <span class="c"># adds a new key</span></code></pre>
+
+  <h3>Missing Keys</h3>
+  <p>Reading a key that doesn't exist returns <code>nothing</code> rather than an error, which makes safe lookups easy:</p>
+  <pre><code><span class="k">let</span> val <span class="k">be</span> person <span class="k">at</span> <span class="s">"phone"</span><span class="p">.</span>
+<span class="k">if</span> val <span class="k">is</span> <span class="k">nothing</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"No phone on record."</span><span class="p">.</span>
+<span class="k">end if.</span></code></pre>
+
+  <h3>Dictionary as a Lookup Table</h3>
+  <pre><code><span class="k">let</span> grades <span class="k">be</span> <span class="s">"A"</span><span class="o">=</span><span class="n">90</span><span class="p">,</span><span class="s">"B"</span><span class="o">=</span><span class="n">80</span><span class="p">,</span><span class="s">"C"</span><span class="o">=</span><span class="n">70</span><span class="p">,</span><span class="s">"D"</span><span class="o">=</span><span class="n">60</span><span class="p">.</span>
+<span class="k">let</span> minimum <span class="k">be</span> grades <span class="k">at</span> <span class="s">"B"</span><span class="p">.</span>    <span class="c"># 80</span></code></pre>
+
+  <!-- ══ FUNCTIONS ══ -->
+  <h2 id="functions">Functions</h2>
+  <h3>Defining a Function</h3>
+  <pre><code><span class="k">define</span> greet <span class="k">with</span> name<span class="p">:</span>
+    <span class="k">say</span> <span class="s">"Hello, "</span> <span class="k">joined with</span> name <span class="k">joined with</span> <span class="s">"!"</span><span class="p">.</span>
+<span class="k">end define.</span>
+
+<span class="c"># No parameters</span>
+<span class="k">define</span> separator<span class="p">:</span>
+    <span class="k">print</span> <span class="s">"---"</span><span class="p">.</span>
+<span class="k">end define.</span></code></pre>
+
+  <h3>Returning a Value</h3>
+  <pre><code><span class="k">define</span> add <span class="k">with</span> a <span class="k">and</span> b<span class="p">:</span>
+    <span class="k">give back</span> a <span class="o">+</span> b<span class="p">.</span>
+<span class="k">end define.</span>
+
+<span class="k">define</span> max <span class="k">with</span> a <span class="k">and</span> b<span class="p">:</span>
+    <span class="k">if</span> a <span class="o">>=</span> b<span class="p">:</span>
+        <span class="k">give back</span> a<span class="p">.</span>
+    <span class="k">end if.</span>
+    <span class="k">give back</span> b<span class="p">.</span>
+<span class="k">end define.</span></code></pre>
+
+  <h3>Calling a Function</h3>
+  <pre><code><span class="c"># Discard the return value</span>
+<span class="k">call</span> greet <span class="k">with</span> <span class="s">"Alice"</span><span class="p">.</span>
+<span class="k">call</span> separator<span class="p">.</span>
+
+<span class="c"># Use the return value</span>
+<span class="k">let</span> result <span class="k">be</span> <span class="k">call</span> add <span class="k">with</span> <span class="n">3</span> <span class="k">and</span> <span class="n">4</span><span class="p">.</span>
+<span class="k">print</span> <span class="s">"Sum: "</span> <span class="k">joined with</span> result<span class="p">.</span>
+
+<span class="c"># Call inside an expression</span>
+<span class="k">print</span> <span class="k">call</span> add <span class="k">with</span> <span class="n">10</span> <span class="k">and</span> <span class="k">call</span> max <span class="k">with</span> <span class="n">3</span> <span class="k">and</span> <span class="n">5</span><span class="p">.</span></code></pre>
+
+  <div class="note"><strong>Multiple parameters:</strong> Separate them with <code>and</code> — both in the definition and the call. e.g. <code>define volume with w and h and d:</code> / <code>call volume with 3 and 4 and 5.</code></div>
+
+  <!-- ══ RECURSION ══ -->
+  <h2 id="recursion">Recursion</h2>
+  <p>Functions can call themselves. Always include a base case to stop the recursion.</p>
+  <pre><code><span class="k">define</span> factorial <span class="k">with</span> n<span class="p">:</span>
+    <span class="k">if</span> n <span class="o">&lt;=</span> <span class="n">1</span><span class="p">:</span>
+        <span class="k">give back</span> <span class="n">1</span><span class="p">.</span>
+    <span class="k">end if.</span>
+    <span class="k">give back</span> n <span class="o">*</span> <span class="k">call</span> factorial <span class="k">with</span> n <span class="o">-</span> <span class="n">1</span><span class="p">.</span>
+<span class="k">end define.</span>
+
+<span class="k">print</span> <span class="k">call</span> factorial <span class="k">with</span> <span class="n">6</span><span class="p">.</span>    <span class="c"># 720</span></code></pre>
+
+  <!-- ══ MATH ══ -->
+  <h2 id="math">Math Built-ins</h2>
+  <table>
+    <thead><tr><th>Expression</th><th>Meaning</th><th>Example</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>sqrt of x</code></td><td>Square root</td><td><code>sqrt of 144</code></td><td><code>12</code></td></tr>
+      <tr><td><code>root n of x</code></td><td>Nth root</td><td><code>root 3 of 27</code></td><td><code>3</code></td></tr>
+      <tr><td><code>x ^ y</code></td><td>Power</td><td><code>2 ^ 10</code></td><td><code>1024</code></td></tr>
+      <tr><td><code>x % y</code></td><td>Modulo</td><td><code>17 % 5</code></td><td><code>2</code></td></tr>
+    </tbody>
+  </table>
+  <pre><code><span class="k">let</span> s <span class="k">be</span> <span class="k">sqrt of</span> <span class="n">256</span><span class="p">.</span>              <span class="c"># 16</span>
+<span class="k">let</span> c <span class="k">be</span> <span class="k">root</span> <span class="n">3</span> <span class="k">of</span> (<span class="n">8</span> <span class="o">*</span> <span class="n">8</span> <span class="o">*</span> <span class="n">8</span>)<span class="p">.</span>     <span class="c"># 8</span>
+<span class="k">let</span> hyp <span class="k">be</span> <span class="k">sqrt of</span> (<span class="n">3</span> <span class="o">^</span> <span class="n">2</span> <span class="o">+</span> <span class="n">4</span> <span class="o">^</span> <span class="n">2</span>)<span class="p">.</span> <span class="c"># 5</span></code></pre>
+
+  <!-- ══ RANDOM ══ -->
+  <h2 id="random">Random Numbers</h2>
+  <p>Generates a random whole number in an inclusive range. Both bounds can be any expression or variable.</p>
+  <pre><code><span class="k">let</span> roll <span class="k">be</span> <span class="k">random number from</span> <span class="n">1</span> <span class="k">to</span> <span class="n">6</span><span class="p">.</span>
+<span class="k">let</span> coin <span class="k">be</span> <span class="k">random number from</span> <span class="n">0</span> <span class="k">to</span> <span class="n">1</span><span class="p">.</span>
+<span class="k">let</span> noise <span class="k">be</span> <span class="k">random number from</span> <span class="o">-</span><span class="n">100</span> <span class="k">to</span> <span class="n">100</span><span class="p">.</span>
+<span class="k">let</span> pick <span class="k">be</span> <span class="k">random number from</span> <span class="n">0</span> <span class="k">to</span> <span class="k">length of</span> myList <span class="o">-</span> <span class="n">1</span><span class="p">.</span></code></pre>
+
+  <!-- ══ CONVERT ══ -->
+  <h2 id="convert">Type Conversions</h2>
+  <table>
+    <thead><tr><th>Expression</th><th>Effect</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>x as number</code></td><td>Parse text to a number</td><td><code>"3.14" as number</code> → <code>3.14</code></td></tr>
+      <tr><td><code>x as text</code></td><td>Convert any value to text</td><td><code>42 as text</code> → <code>"42"</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ KEYWORDS ══ -->
+  <h2 id="keywords">Keyword List</h2>
+  <p>These words have special meaning in Englar and cannot be used as variable names:</p>
+  <pre><code><span class="k">let</span>  <span class="k">be</span>  <span class="k">print</span>  <span class="k">say</span>  <span class="k">if</span>  <span class="k">otherwise</span>  <span class="k">end</span>  <span class="k">while</span>  <span class="k">repeat</span>  <span class="k">times</span>
+<span class="k">for</span>  <span class="k">each</span>  <span class="k">in</span>  <span class="k">define</span>  <span class="k">with</span>  <span class="k">give</span>  <span class="k">back</span>  <span class="k">stop</span>  <span class="k">add</span>  <span class="k">remove</span>
+<span class="k">last</span>  <span class="k">first</span>  <span class="k">from</span>  <span class="k">call</span>  <span class="k">and</span>  <span class="k">or</span>  <span class="k">not</span>  <span class="k">true</span>  <span class="k">false</span>  <span class="k">nothing</span>
+<span class="k">as</span>  <span class="k">number</span>  <span class="k">text</span>  <span class="k">length</span>  <span class="k">of</span>  <span class="k">sqrt</span>  <span class="k">root</span>  <span class="k">random</span>  <span class="k">get</span>  <span class="k">input</span>
+<span class="k">joined</span>  <span class="k">to</span>  <span class="k">between</span>  <span class="k">at</span>  <span class="k">is</span>  <span class="k">contains</span></code></pre>
+
+  <!-- ══ CHEAT SHEET ══ -->
+  <h2 id="cheatsheet">Cheat Sheet</h2>
+
+  <h3>Variables</h3>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>let x be 10.</code></td><td>Declare variable x</td></tr>
+      <tr><td><code>x be 20.</code></td><td>Reassign existing variable</td></tr>
+      <tr><td><code>x at "k" be val.</code></td><td>Set dict/list entry</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Control Flow</h3>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>if cond: ... end if.</code></td><td>Conditional</td></tr>
+      <tr><td><code>otherwise if cond: ...</code></td><td>Else-if branch</td></tr>
+      <tr><td><code>otherwise: ...</code></td><td>Else branch</td></tr>
+      <tr><td><code>while cond: ... end while.</code></td><td>While loop</td></tr>
+      <tr><td><code>repeat n times: ... end repeat.</code></td><td>Count loop</td></tr>
+      <tr><td><code>for each x in list: ... end for.</code></td><td>For-each loop</td></tr>
+      <tr><td><code>stop.</code></td><td>Break out of current loop</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Functions</h3>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>define f with a and b: ... end define.</code></td><td>Define function</td></tr>
+      <tr><td><code>give back value.</code></td><td>Return a value</td></tr>
+      <tr><td><code>call f with x and y.</code></td><td>Call (discard result)</td></tr>
+      <tr><td><code>let r be call f with x.</code></td><td>Call and capture result</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Lists &amp; Dicts</h3>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>let l be 1,2,3.</code></td><td>Create list</td></tr>
+      <tr><td><code>let d be "a"=1,"b"=2.</code></td><td>Create dictionary</td></tr>
+      <tr><td><code>l at 0</code></td><td>Access by index</td></tr>
+      <tr><td><code>d at "key"</code></td><td>Access by key</td></tr>
+      <tr><td><code>add x to l.</code></td><td>Append to list</td></tr>
+      <tr><td><code>remove last from l.</code></td><td>Pop last item</td></tr>
+      <tr><td><code>remove first from l.</code></td><td>Pop first item</td></tr>
+      <tr><td><code>length of l</code></td><td>Length of list/dict/string</td></tr>
+    </tbody>
+  </table>
+
+</main>
+
+</body>
+</html>
